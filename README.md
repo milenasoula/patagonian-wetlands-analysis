@@ -28,7 +28,7 @@ Methods included:
 
 ## Repository structure
 
-- `scripts/` → data cleaning, modeling, and visualization scripts
+- `scripts/` → data cleaning, modeling, and visualization script
 - `figures/` → selected figures and plots
 - `results/` → model outputs and processed results
 
