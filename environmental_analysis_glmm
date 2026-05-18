@@ -1,0 +1,3759 @@
+##########
+# Environmental analysis of Patagonian mountain wetlands
+# R workflow for environmental and biodiversity analyses
+# Author: Milena Soula
+# Last update: May 2025
+##########
+
+#Load packages:
+library(readxl)
+library(corrplot)
+library(tidyverse)
+library(plyr)
+library(glmmTMB)
+library(DHARMa)
+library(emmeans)
+library(lme4)
+library(viridis)
+library(MASS)
+library(MuMIn)
+##########
+
+
+#Load data and prepare it for analyses
+#IMPORT DATABASE####
+Cordon_Esquel <- read_excel("Cordon_Esquel_MAY.xlsx")
+Cordon_Esquel
+
+names(Cordon_Esquel)
+
+#DATABASE: Cordon_Esquel
+
+#Variables:
+#SITE: code of sampling site
+#YEAR: year of sampling
+#LAT: latitude
+#LON: longitude
+#ALTITUDE: altitude (masl)    
+#ELEVATION: position of each wetland across altitudinal gradient (SA: subandean - below treeline, AN: andean - above treeline)
+#TEMPERATURE: water temperature (°C)
+#CONDUCTIVITY: water conductivity (microSiemens/cm)
+#TDS: total dissolved solids (mg/l)   
+#OD: dissolved oxygen (mg/l)          
+#POR_OD: oxygen saturation (%)
+#PH: pH
+#TSS: total suspended solids (mg/l)
+#PO4: phosphate (microgram/l)
+#NH4:ammonium (microgram/l)
+#NO3NO2: nitrate + nitrite (microgram/l)
+#RICHNESS: richness of macroinvertebrates (number of taxa)     
+#ABUNDANCE: abundance of macroinvertebrates (individuals/m3)    
+#LCBD: local contribution to beta diversity        
+
+str(Cordon_Esquel)
+dim(Cordon_Esquel)
+
+#as factors:
+Cordon_Esquel$SITE<-as.factor(Cordon_Esquel$SITE)
+Cordon_Esquel$YEAR<-as.factor(Cordon_Esquel$YEAR)
+Cordon_Esquel$ELEVATION<-as.factor(Cordon_Esquel$ELEVATION)
+
+class(Cordon_Esquel$SITE)
+class(Cordon_Esquel$YEAR)
+class(Cordon_Esquel$ELEVATION)
+
+#Levels:
+levels(Cordon_Esquel$SITE)
+levels(Cordon_Esquel$YEAR)
+levels(Cordon_Esquel$ELEVATION)
+
+#Table function:
+table(Cordon_Esquel$SITE)
+table(Cordon_Esquel$YEAR)
+table(Cordon_Esquel$ELEVATION)
+##########
+
+#DATA EXPLORATION####
+
+#OUTLIERS####
+par(mfrow = c(1, 2))    
+names(Cordon_Esquel)
+
+#RICHNESS
+boxplot(Cordon_Esquel$RICHNESS)
+dotchart(Cordon_Esquel$RICHNESS, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#ABUNDANCE
+boxplot(Cordon_Esquel$ABUNDANCE)
+dotchart(Cordon_Esquel$ABUNDANCE, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#LCBD
+boxplot(Cordon_Esquel$LCBD)
+dotchart(Cordon_Esquel$LCBD, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#LAT
+boxplot(Cordon_Esquel$LAT)
+dotchart(Cordon_Esquel$LAT, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#LON
+boxplot(Cordon_Esquel$LON)
+dotchart(Cordon_Esquel$LON, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#ALTITUDE
+boxplot(Cordon_Esquel$ALTITUDE)
+dotchart(Cordon_Esquel$ALTITUDE, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#TEMPERATURE
+boxplot(Cordon_Esquel$TEMPERATURE)
+dotchart(Cordon_Esquel$TEMPERATURE, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#CONDUCTIVITY
+boxplot(Cordon_Esquel$CONDUCTIVITY)
+dotchart(Cordon_Esquel$CONDUCTIVITY, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#OD
+boxplot(Cordon_Esquel$OD)
+dotchart(Cordon_Esquel$OD, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#POR_OD
+boxplot(Cordon_Esquel$POR_OD)
+dotchart(Cordon_Esquel$POR_OD, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#PH
+boxplot(Cordon_Esquel$PH)
+dotchart(Cordon_Esquel$PH, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#TSS
+boxplot(Cordon_Esquel$TSS)
+dotchart(Cordon_Esquel$TSS, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#PO4
+boxplot(Cordon_Esquel$PO4)
+dotchart(Cordon_Esquel$PO4, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#NH4
+boxplot(Cordon_Esquel$NH4)
+dotchart(Cordon_Esquel$NH4, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+
+#NO3NO2
+boxplot(Cordon_Esquel$NO3NO2)
+dotchart(Cordon_Esquel$NO3NO2, 
+         xlab = "Range of data", 
+         ylab = "Order of data")
+##########
+
+#COLLINEARITY####
+#Correlation matrix:
+attach(Cordon_Esquel)
+
+names(Cordon_Esquel)
+
+NUMERIC_VARIABLES <- cbind(ALTITUDE,TEMPERATURE,CONDUCTIVITY,OD,POR_OD,
+                           PH,TSS,PO4,NH4,NO3NO2)
+NUMERIC_VARIABLES
+
+CORRELATION <- cor(NUMERIC_VARIABLES)
+CORRELATION
+
+#Correlation matrix graph:
+par(mfrow = c(1, 1))
+corrplot(CORRELATION)
+
+########################################################################
+
+library(corrplot)
+
+colnames(CORRELATION) <- c(
+  "Altitud", "Temperatura", "Conductividad", "OD",
+  "% Sat OD", "pH", "TSS", "PO₄",
+  "NH₄⁺", "NO₃⁻/NO₂⁻"
+)
+
+rownames(CORRELATION) <- colnames(CORRELATION)
+
+# Paleta rojo-negativo, azul-positivo
+col_pal <- colorRampPalette(c("red", "white", "blue"))(200)
+
+# --- Capa superior: círculos ---
+corrplot(
+  CORRELATION,
+  method = "circle",
+  type = "upper",
+  diag = TRUE,                 # diagonal visible (1)
+  tl.col = "black",
+  tl.cex = 0.8,
+  tl.srt = 45,                 # etiquetas en diagonal
+  col = col_pal,
+  cl.lim = c(-1, 1),
+  cl.pos = "r"                 # barra de color a la derecha
+)
+
+# --- Capa inferior: números ---
+corrplot(
+  CORRELATION,
+  add = TRUE,
+  method = "number",
+  type = "lower",
+  diag = TRUE,                 # incluye el 1
+  number.cex = 0.75,
+  number.col = "black",
+  tl.pos = "n"
+)
+
+######################################################################
+
+#p-values:
+TEST <- cor.mtest(CORRELATION)
+TEST
+
+#Correlation threshold: above 0.7 or below -0.7
+#ALTITUDE: CONDUCTIVITY (-), NO3NO2 (-)
+#TEMPERATURE: ...
+#CONDUCTIVITY: ALTITUDE(-)
+#OD: POR_OD
+#POR_OD: OD
+#PH: ...
+#TSS: ...
+#PO4: ...
+#NH4:...
+#NO3NO2: ALTITUDE (-)
+
+#Conditional boxplot:
+names(Cordon_Esquel)
+
+par(mfrow = c(2, 5)) 
+#ELEVATION
+boxplot(TEMPERATURE ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Temperature",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(CONDUCTIVITY ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Conductivity",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(OD ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Dissolved oxygen",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(POR_OD ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Oxygen saturation",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(PH ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "pH",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(TSS ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Total suspended solids",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(PO4 ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Phosphate",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(NH4 ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Ammonium",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+boxplot(NO3NO2 ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        ylab = "Nitrate + nitrite",
+        xlab = "Elevation",
+        cex.lab = 1.5)
+
+#YEAR
+boxplot(TEMPERATURE ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Temperature",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(CONDUCTIVITY ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Conductivity",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(OD ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Dissolved oxygen",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(POR_OD ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Oxygen saturation",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(PH ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "pH",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(TSS ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Total suspended solids",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(PO4 ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Phosphate",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(NH4 ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Ammonium",
+        xlab = "Year",
+        cex.lab = 1.5)
+boxplot(NO3NO2 ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        ylab = "Nitrate + nitrite",
+        xlab = "Year",
+        cex.lab = 1.5)
+
+summary(Cordon_Esquel$TEMPERATURE)
+
+FIGURE_TEMPERATURE <- ggplot(Cordon_Esquel, aes(x=ELEVATION, y=TEMPERATURE))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Elevation") + ylab("Temperature")+
+  scale_y_continuous(limits=c(0,30),breaks = seq(0,30, by=5))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ YEAR)
+FIGURE_TEMPERATURE
+
+FIGURE_TEMPERATURE_2 <- ggplot(Cordon_Esquel, aes(x=YEAR, y=TEMPERATURE))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Year") + ylab("Temperature")+
+  scale_y_continuous(limits=c(0,30),breaks = seq(0,30, by=5))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ ELEVATION)
+FIGURE_TEMPERATURE_2
+
+detach(Cordon_Esquel)
+##########
+
+#RELATIONSHIPS BETWEEN VARIABLES: Y vs X####
+
+#Y vs X numerical:
+attach(Cordon_Esquel)
+names(Cordon_Esquel)
+
+NUMERIC_VARIABLES_2 <- cbind(RICHNESS,ABUNDANCE,LCBD,ALTITUDE,TEMPERATURE,CONDUCTIVITY,OD,POR_OD,
+                             PH,TSS,PO4,NH4,NO3NO2)
+NUMERIC_VARIABLES_2
+
+pairs(NUMERIC_VARIABLES_2)
+
+#RICHNESS
+par(mfrow = c(1, 1)) 
+plot(ALTITUDE,RICHNESS)
+plot(TEMPERATURE,RICHNESS)
+plot(CONDUCTIVITY,RICHNESS)
+plot(OD,RICHNESS)
+plot(POR_OD,RICHNESS)
+plot(PH,RICHNESS)
+plot(TSS,RICHNESS)
+plot(PO4,RICHNESS)
+plot(NH4,RICHNESS)
+plot(NO3NO2,RICHNESS)
+
+#ABUNDANCE
+plot(ALTITUDE,ABUNDANCE)
+plot(TEMPERATURE,ABUNDANCE)
+plot(CONDUCTIVITY,ABUNDANCE)
+plot(OD,ABUNDANCE)
+plot(POR_OD,ABUNDANCE)
+plot(PH,ABUNDANCE)
+plot(TSS,ABUNDANCE)
+plot(PO4,ABUNDANCE)
+plot(NH4,ABUNDANCE)
+plot(NO3NO2,ABUNDANCE)
+
+#LCBD
+plot(ALTITUDE,LCBD)
+plot(TEMPERATURE,LCBD)
+plot(CONDUCTIVITY,LCBD)
+plot(OD,LCBD)
+plot(POR_OD,LCBD)
+plot(PH,LCBD)
+plot(TSS,LCBD)
+plot(PO4,LCBD)
+plot(NH4,LCBD)
+plot(NO3NO2,LCBD)
+
+#Y vs X categorical:
+boxplot(RICHNESS ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        varwidth = TRUE,
+        ylab = "Richness",
+        xlab = "Elevation",
+        main = "")
+boxplot(RICHNESS ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        varwidth = TRUE,
+        ylab = "Richness",
+        xlab = "Year",
+        main = "")
+
+summary(Cordon_Esquel$RICHNESS)
+
+FIGURE_RICHNESS <- ggplot(Cordon_Esquel, aes(x=ELEVATION, y=RICHNESS))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Elevation") + ylab("Richness")+
+  scale_y_continuous(limits=c(0,30),breaks = seq(0,30, by=5))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ YEAR)
+FIGURE_RICHNESS
+
+FIGURE_RICHNESS_2 <- ggplot(Cordon_Esquel, aes(x=YEAR, y=RICHNESS))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Year") + ylab("Richness")+
+  scale_y_continuous(limits=c(0,30),breaks = seq(0,30, by=5))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ ELEVATION)
+FIGURE_RICHNESS_2
+
+boxplot(ABUNDANCE ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        varwidth = TRUE,
+        ylab = "Abundance",
+        xlab = "Elevation",
+        main = "")
+boxplot(ABUNDANCE ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        varwidth = TRUE,
+        ylab = "Abundance",
+        xlab = "Year",
+        main = "")
+
+summary(Cordon_Esquel$ABUNDANCE)
+
+FIGURE_ABUNDANCE <- ggplot(Cordon_Esquel, aes(x=ELEVATION, y=ABUNDANCE))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Elevation") + ylab("Abundance")+
+  scale_y_continuous(limits=c(0,7000),breaks = seq(0,7000, by=1000))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ YEAR)
+FIGURE_ABUNDANCE
+
+FIGURE_ABUNDANCE_2 <- ggplot(Cordon_Esquel, aes(x=YEAR, y=ABUNDANCE))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Year") + ylab("Abundance")+
+  scale_y_continuous(limits=c(0,7000),breaks = seq(0,7000, by=1000))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ ELEVATION)
+FIGURE_ABUNDANCE_2
+
+boxplot(LCBD ~ factor(ELEVATION), 
+        data = Cordon_Esquel,
+        varwidth = TRUE,
+        ylab = "Local contribution to beta diversity",
+        xlab = "Elevation",
+        main = "")
+boxplot(LCBD ~ factor(YEAR), 
+        data = Cordon_Esquel,
+        varwidth = TRUE,
+        ylab = "Local contribution to beta diversity",
+        xlab = "Year",
+        main = "")
+
+summary(Cordon_Esquel$LCBD)
+
+FIGURE_LCBD <- ggplot(Cordon_Esquel, aes(x=ELEVATION, y=LCBD))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Elevation") + ylab("Local contribution to beta diversity")+
+  scale_y_continuous(limits=c(0,0.3),breaks = seq(0,0.3, by=0.1))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ YEAR)
+FIGURE_LCBD
+
+FIGURE_LCBD_2 <- ggplot(Cordon_Esquel, aes(x=YEAR, y=LCBD))+
+  theme_bw()+
+  geom_boxplot()+
+  xlab("Year") + ylab("Local contribution to beta diversity")+
+  scale_y_continuous(limits=c(0,0.3),breaks = seq(0,0.3, by=0.1))+
+  theme(panel.border=element_rect(colour = "black", fill = NA),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 14, face="bold"),
+        axis.text.y=element_text(color = "black", size = 14, face="bold"),
+        axis.line=element_line(colour="black"),
+        axis.title.x=element_text(colour="black", face="bold", size=16),
+        axis.title.y=element_text(colour="black", face="bold", size=16))+
+  facet_grid(. ~ ELEVATION)
+FIGURE_LCBD_2
+
+detach(Cordon_Esquel)
+##########
+
+#DESCRIPTIVE SUMMARY MEASURES####
+summary(Cordon_Esquel)
+
+#TEMPERATURE
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(TEMPERATURE, na.rm = TRUE),
+                           SD= sd(TEMPERATURE, na.rm = TRUE),
+                           n= sum(!is.na(TEMPERATURE)),
+                           SE= SD/sqrt(n),
+                           MIN=min(TEMPERATURE),
+                           MAX=max(TEMPERATURE))
+SUMMARY_MEASURES
+
+#CONDUCTIVITY
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(CONDUCTIVITY, na.rm = TRUE),
+                           SD= sd(CONDUCTIVITY, na.rm = TRUE),
+                           n= sum(!is.na(CONDUCTIVITY)),
+                           SE= SD/sqrt(n),
+                           MIN=min(CONDUCTIVITY),
+                           MAX=max(CONDUCTIVITY))
+SUMMARY_MEASURES
+
+#OD
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(OD, na.rm = TRUE),
+                           SD= sd(OD, na.rm = TRUE),
+                           n= sum(!is.na(OD)),
+                           SE= SD/sqrt(n),
+                           MIN=min(OD),
+                           MAX=max(OD))
+SUMMARY_MEASURES
+
+#POR_OD
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(POR_OD, na.rm = TRUE),
+                           SD= sd(POR_OD, na.rm = TRUE),
+                           n= sum(!is.na(POR_OD)),
+                           SE= SD/sqrt(n),
+                           MIN=min(POR_OD),
+                           MAX=max(POR_OD))
+SUMMARY_MEASURES
+
+#PH
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(PH, na.rm = TRUE),
+                           SD= sd(PH, na.rm = TRUE),
+                           n= sum(!is.na(PH)),
+                           SE= SD/sqrt(n),
+                           MIN=min(PH),
+                           MAX=max(PH))
+SUMMARY_MEASURES
+
+#TSS
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(TSS, na.rm = TRUE),
+                           SD= sd(TSS, na.rm = TRUE),
+                           n= sum(!is.na(TSS)),
+                           SE= SD/sqrt(n),
+                           MIN=min(TSS),
+                           MAX=max(TSS))
+SUMMARY_MEASURES
+
+#PO4
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(PO4, na.rm = TRUE),
+                           SD= sd(PO4, na.rm = TRUE),
+                           n= sum(!is.na(PO4)),
+                           SE= SD/sqrt(n),
+                           MIN=min(PO4),
+                           MAX=max(PO4))
+SUMMARY_MEASURES
+
+#NH4
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(NH4, na.rm = TRUE),
+                           SD= sd(NH4, na.rm = TRUE),
+                           n= sum(!is.na(NH4)),
+                           SE= SD/sqrt(n),
+                           MIN=min(NH4),
+                           MAX=max(NH4))
+SUMMARY_MEASURES
+
+#NO3NO2
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(NO3NO2, na.rm = TRUE),
+                           SD= sd(NO3NO2, na.rm = TRUE),
+                           n= sum(!is.na(NO3NO2)),
+                           SE= SD/sqrt(n),
+                           MIN=min(NO3NO2),
+                           MAX=max(NO3NO2))
+SUMMARY_MEASURES
+
+#RICHNESS
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(RICHNESS, na.rm = TRUE),
+                           SD= sd(RICHNESS, na.rm = TRUE),
+                           n= sum(!is.na(RICHNESS)),
+                           SE= SD/sqrt(n),
+                           MIN=min(RICHNESS),
+                           MAX=max(RICHNESS))
+SUMMARY_MEASURES
+
+#ABUNDANCE
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(ABUNDANCE, na.rm = TRUE),
+                           SD= sd(ABUNDANCE, na.rm = TRUE),
+                           n= sum(!is.na(ABUNDANCE)),
+                           SE= SD/sqrt(n),
+                           MIN=min(ABUNDANCE),
+                           MAX=max(ABUNDANCE))
+SUMMARY_MEASURES
+
+#LCBD
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(LCBD, na.rm = TRUE),
+                           SD= sd(LCBD, na.rm = TRUE),
+                           n= sum(!is.na(LCBD)),
+                           SE= SD/sqrt(n),
+                           MIN=min(LCBD),
+                           MAX=max(LCBD))
+SUMMARY_MEASURES
+##########
+
+#ZERO INFLATION####
+sum(Cordon_Esquel$RICHNESS == 0)
+#2
+
+100 * sum(Cordon_Esquel$RICHNESS == 0) / nrow(Cordon_Esquel) 
+#6.7%
+
+sum(Cordon_Esquel$ABUNDANCE == 0)
+#2
+
+100 * sum(Cordon_Esquel$ABUNDANCE == 0) / nrow(Cordon_Esquel) 
+#6.7%
+
+sum(Cordon_Esquel$LCBD == 0)
+#0
+##########
+
+#GLMM MODELS (X categorical)####
+
+#Poisson RICHNESS GLMM vs X categorical####
+
+#Response variable: RICHNESS
+#Predictive variables: ELEVATION, YEAR 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_POISSON_RICHNESS <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                  ELEVATION*YEAR+
+                                  (1 |SITE),
+                                  family = poisson,
+                                  data = Cordon_Esquel)
+Mod_POISSON_RICHNESS
+
+summary(Mod_POISSON_RICHNESS)
+
+#Overdispersion parameter
+E1 <- resid(Mod_POISSON_RICHNESS, type = "pearson")
+N  <- nrow(Cordon_Esquel)
+p  <- length(coef(Mod_POISSON_RICHNESS))
+sum(E1^2) / (N - p)
+#0.9641448
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_RICHNESS)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.97744, p-value = 0.912
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.97744, p-value = 0.544
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.97744, p-value = 0.456
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 3.9062, p-value = 0.168
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#Model selection:
+
+drop1(Mod_POISSON_RICHNESS, test = "Chi")
+
+#Remove: ELEVATION:YEAR interaction
+Mod_POISSON_RICHNESS_V2 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                  (1 |SITE),
+                                family = poisson,
+                                data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_V2
+
+drop1(Mod_POISSON_RICHNESS_V2, test = "Chi")
+#Main effects of ELEVATION and YEAR
+
+#Model validation:
+RESIDUALS <- resid(Mod_POISSON_RICHNESS_V2)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_POISSON_RICHNESS_V2)
+PREDICTED
+
+#Graph residuals vs fitted values
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+
+#Graph residuals vs each covariate in the final model
+par(mfrow = c(1, 3)) 
+
+plot(x = Cordon_Esquel$ELEVATION, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Elevation",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$YEAR, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Year",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$SITE, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Site",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+
+#Results:
+summary(Mod_POISSON_RICHNESS_V2)
+
+#Output:
+#             Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)  1.38236    0.20763   6.658 2.78e-11 ***
+#ELEVATIONSA  1.54458    0.22484   6.870 6.43e-12 ***
+#YEAR2024    -0.44438    0.13978  -3.179  0.00148 ** 
+#YEAR2025    -0.09607    0.12664  -0.759  0.44806
+
+drop1(Mod_POISSON_RICHNESS_V2, test = "Chi")
+
+#Output:
+#RICHNESS ~ ELEVATION + YEAR + (1 | SITE)
+#           Df    AIC    LRT  Pr(>Chi)    
+#<none>       173.39                     
+#ELEVATION  1 189.06 17.673 2.623e-05 ***
+#YEAR       2 180.53 11.141  0.003808 ** 
+  
+#Comparisons and contrasts
+CC_elevation <- emmeans(Mod_POISSON_RICHNESS_V2, "ELEVATION")   
+CC_elevation
+
+contrast(CC_elevation, "pairwise")
+
+#Output:
+#contrast estimate    SE df t.ratio p.value
+#AN - SA     -1.54 0.225 25  -6.870  <.0001
+
+CC_elevation <- emmeans(Mod_POISSON_RICHNESS_V2, "YEAR")   
+CC_elevation
+
+contrast(CC_elevation, "pairwise")
+
+#Output:
+#contrast estimate    SE df t.ratio p.value
+#YEAR2018 - YEAR2024   0.4444 0.140 25   3.179  0.0105
+#YEAR2018 - YEAR2025   0.0961 0.127 25   0.759  0.7313
+#YEAR2024 - YEAR2025  -0.3483 0.143 25  -2.444  0.0552
+
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(RICHNESS, na.rm = TRUE),
+                           SD= sd(RICHNESS, na.rm = TRUE),
+                           n= sum(!is.na(RICHNESS)),
+                           SE= SD/sqrt(n),
+                           MIN=min(RICHNESS),
+                           MAX=max(RICHNESS))
+SUMMARY_MEASURES
+
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("YEAR"), summarize,
+                           MEAN= mean(RICHNESS, na.rm = TRUE),
+                           SD= sd(RICHNESS, na.rm = TRUE),
+                           n= sum(!is.na(RICHNESS)),
+                           SE= SD/sqrt(n),
+                           MIN=min(RICHNESS),
+                           MAX=max(RICHNESS))
+SUMMARY_MEASURES
+
+#Figure: Poisson RICHNESS GLMM####
+#OPTION A1: see how the predicted values change across levels of factor ELEVATION####
+
+#ELEVATION
+Mod_POISSON_RICHNESS_elevation <- glmmTMB(RICHNESS ~ ELEVATION+
+                                     (1 |SITE),
+                                   family = poisson,
+                                   data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_elevation
+
+DatosNuevos <- data.frame(ELEVATION = levels(Cordon_Esquel$ELEVATION))
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_RICHNESS_elevation, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+summary(Cordon_Esquel$RICHNESS)
+
+FIG_RICHNESS_GLMM_elevation <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = ELEVATION, 
+                 y = RICHNESS), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = ELEVATION, 
+                 y = mu), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = ELEVATION, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,30),breaks = seq(0,30, by=4))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Richness",
+       x= "Elevation")
+FIG_RICHNESS_GLMM_elevation
+
+#OPTION A2: see how the predicted values change across levels of factor YEAR####
+
+#YEAR
+Mod_POISSON_RICHNESS_year <- glmmTMB(RICHNESS ~ YEAR+
+                                            (1 |SITE),
+                                          family = poisson,
+                                          data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_year
+
+DatosNuevos <- data.frame(YEAR = levels(Cordon_Esquel$YEAR))
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_RICHNESS_year, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+FIG_RICHNESS_GLMM_year <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = YEAR, 
+                 y = RICHNESS), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = YEAR, 
+                 y = mu), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = YEAR, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,30),breaks = seq(0,30, by=4))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Richness",
+       x= "Year")
+FIG_RICHNESS_GLMM_year
+
+#Poisson ABUNDANCE GLMM vs X categorical####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, YEAR 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_POISSON_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                  ELEVATION*YEAR+
+                                  (1 |SITE),
+                                family = poisson,
+                                data = Cordon_Esquel)
+Mod_POISSON_ABUNDANCE
+
+summary(Mod_POISSON_ABUNDANCE)
+
+#Overdispersion parameter
+E1 <- resid(Mod_POISSON_ABUNDANCE, type = "pearson")
+N  <- nrow(Cordon_Esquel)
+p  <- length(coef(Mod_POISSON_ABUNDANCE))
+sum(E1^2) / (N - p)
+#401.651
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_ABUNDANCE)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.065719, p-value = 0.28
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.065719, p-value = 0.14
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.065719, p-value = 0.86
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 125, p-value < 2.2e-16
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#overdispersion: no
+#zeroinflation: yes
+#6.7% of zeros
+
+#Negative Binomial ABUNDANCE GLMM vs X categorical####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, YEAR 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_NB_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                   ELEVATION*YEAR+
+                                   (1 |SITE),
+                                 family = "nbinom2",
+                                 data = Cordon_Esquel)
+Mod_NB_ABUNDANCE
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_NB_ABUNDANCE)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.038678, p-value = 0.032
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.038678, p-value = 0.016
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.038678, p-value = 0.984
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 26.316, p-value < 2.2e-16
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation significant
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: yes
+#overdispersion: no
+#zeroinflation: yes
+#6.7% of zeros
+#NB distribution: no
+
+#Poisson Zeroinflated ABUNDANCE GLMM vs X categorical####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, YEAR 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                   ELEVATION*YEAR+
+                                   (1 |SITE),
+                                 family = poisson,
+                                 ziformula = ~1,
+                                 data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_ZI_ABUNDANCE)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.11359, p-value = 0.224
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.11359, p-value = 0.112
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.11359, p-value = 0.888
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 1.2048, p-value = 1
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: no
+#overdispersion: no
+#zeroinflation: no
+#Zero-Inflated Poisson Model ZIP GLMM: yes
+
+#Model selection:
+drop1(Mod_POISSON_ZI_ABUNDANCE, test = "Chi")
+
+#Significant effect of ELEVATION*YEAR interaction
+
+#Model validation:
+RESIDUALS <- resid(Mod_POISSON_ZI_ABUNDANCE)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_POISSON_ZI_ABUNDANCE)
+PREDICTED
+
+#Graph residuals vs fitted values
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+#potential issues with model fit...
+
+#Graph residuals vs each covariate in the final model
+par(mfrow = c(1, 3)) 
+
+plot(x = Cordon_Esquel$ELEVATION, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Elevation",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$YEAR, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Year",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$SITE, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Site",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+
+#Results:
+summary(Mod_POISSON_ZI_ABUNDANCE)
+
+#Output:
+#             Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)           5.03545    0.45047  11.178  < 2e-16 ***
+#ELEVATIONSA           2.57199    0.57895   4.442 8.89e-06 ***
+#YEAR2024             -1.49694    0.06920 -21.633  < 2e-16 ***
+#YEAR2025              0.18639    0.03994   4.666 3.06e-06 ***
+#ELEVATIONSA:YEAR2024  2.10504    0.07010  30.028  < 2e-16 ***
+#ELEVATIONSA:YEAR2025 -0.37706    0.04214  -8.948  < 2e-16 ***
+
+drop1(Mod_POISSON_ZI_ABUNDANCE, test = "Chi")
+
+#Output:
+#RICHNESS ~ ELEVATION + YEAR + (1 | SITE)
+#           Df    AIC    LRT  Pr(>Chi)    
+#ABUNDANCE ~ ELEVATION + YEAR + ELEVATION * YEAR + (1 | SITE)
+#                Df   AIC    LRT  Pr(>Chi)    
+#<none>            12674                     
+#ELEVATION:YEAR  2 14801 2130.1 < 2.2e-16 ***
+
+#Comparisons and contrasts
+CC_YEAR_ELEVATION <- emmeans(Mod_POISSON_ZI_ABUNDANCE, trt.vs.ctrl ~ YEAR | ELEVATION, type= "response")
+CC_YEAR_ELEVATION
+
+CC_ELEVATION_YEAR <- emmeans(Mod_POISSON_ZI_ABUNDANCE, trt.vs.ctrl ~  ELEVATION | YEAR, type= "response")
+CC_ELEVATION_YEAR
+
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION","YEAR"), summarize,
+                           MEAN= mean(ABUNDANCE, na.rm = TRUE),
+                           SD= sd(ABUNDANCE, na.rm = TRUE),
+                           n= sum(!is.na(ABUNDANCE)),
+                           SE= SD/sqrt(n),
+                           MIN=min(ABUNDANCE),
+                           MAX=max(ABUNDANCE))
+SUMMARY_MEASURES
+
+#Figure: POISSON ZI ABUNDANCE GLMM####
+#OPTION A1: see how the predicted values change across levels of factor ELEVATION, discriminated by YEAR (1 Figure)####
+
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+DatosNuevos <- data.frame(
+  ELEVATION = levels(Cordon_Esquel$ELEVATION),
+  YEAR = (Cordon_Esquel$YEAR))
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_ZI_ABUNDANCE, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+summary(DatosNuevos$SeUp)
+summary(Cordon_Esquel$ABUNDANCE)
+
+FIG_ABUNDANCE_GLMM_elevation_year <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = ELEVATION, 
+                 y = ABUNDANCE), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = ELEVATION, 
+                 y = mu,
+                 group=YEAR,
+                 colour=YEAR), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = ELEVATION, 
+                    ymax = SeUp, 
+                    ymin = SeLow,
+                    group=YEAR,
+                    colour=YEAR), width=.06)+
+  scale_colour_manual(values = c("#00CCFF","#009900","#FF99CC"))+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,8000),breaks = seq(0,8000, by=1000))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "top",
+        legend.box.background = element_rect(fill="black",linetype="solid",linewidth=1),
+        legend.title = element_text(size=10, face="bold"),
+        legend.text = element_text(size=10, face="bold"))+
+  labs(y= "Abundance",
+       x= "Elevation")
+FIG_ABUNDANCE_GLMM_elevation_year
+
+#OPTION A2: see how the predicted values change across levels of factor YEAR, discriminated by ELEVATION (1 Figure)####
+
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+DatosNuevos <- data.frame(
+  ELEVATION = (Cordon_Esquel$ELEVATION),
+  YEAR = levels(Cordon_Esquel$YEAR))
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_ZI_ABUNDANCE, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+FIG_ABUNDANCE_GLMM_year_elevation <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = YEAR, 
+                 y = ABUNDANCE), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = YEAR, 
+                 y = mu,
+                 group=ELEVATION,
+                 colour=ELEVATION), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = YEAR, 
+                    ymax = SeUp, 
+                    ymin = SeLow,
+                    group=ELEVATION,
+                    colour=ELEVATION), width=.06)+
+  scale_colour_manual(values = c("#00CCFF","#009900"))+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,8000),breaks = seq(0,8000, by=1000))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "top",
+        legend.box.background = element_rect(fill="black",linetype="solid",linewidth=1),
+        legend.title = element_text(size=10, face="bold"),
+        legend.text = element_text(size=10, face="bold"))+
+  labs(y= "Abundance",
+       x= "Year")
+FIG_ABUNDANCE_GLMM_year_elevation
+
+#OPTION B1: see how the predicted values change across levels of factor ELEVATION, while keeping factor YEAR fixed at one level (3 Figures)####
+#Level: YEAR 2018####
+
+#ELEVATION Option B1: YEAR 2018  
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+levels(Cordon_Esquel$YEAR)
+
+year_2018 <- levels(Cordon_Esquel$YEAR)[1]
+year_2018
+
+DatosNuevos <- data.frame(ELEVATION = levels(Cordon_Esquel$ELEVATION),
+                          YEAR = year_2018)
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_ZI_ABUNDANCE, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+FIG_ABUNDANCE_GLMM_elevation_B1_2018 <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = ELEVATION, 
+                 y = ABUNDANCE), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = ELEVATION, 
+                 y = mu), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = ELEVATION, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,8000),breaks = seq(0,8000, by=1000))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Abundance",
+       x= "Elevation",
+       title = paste("Year fixed at: 2018"))
+FIG_ABUNDANCE_GLMM_elevation_B1_2018
+
+#Level: YEAR 2024
+#ELEVATION Option B1: YEAR 2024  
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+levels(Cordon_Esquel$YEAR)
+
+year_2024 <- levels(Cordon_Esquel$YEAR)[2]
+year_2024
+
+DatosNuevos <- data.frame(ELEVATION = levels(Cordon_Esquel$ELEVATION),
+                          YEAR = year_2024)
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_ZI_ABUNDANCE, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+FIG_ABUNDANCE_GLMM_elevation_B1_2024 <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = ELEVATION, 
+                 y = ABUNDANCE), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = ELEVATION, 
+                 y = mu), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = ELEVATION, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,8000),breaks = seq(0,8000, by=1000))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Abundance",
+       x= "Elevation",
+       title = paste("Year fixed at: 2024"))
+FIG_ABUNDANCE_GLMM_elevation_B1_2024
+
+#Level: YEAR 2025
+#ELEVATION Option B1: YEAR 2025  
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+levels(Cordon_Esquel$YEAR)
+
+year_2025 <- levels(Cordon_Esquel$YEAR)[3]
+year_2025
+
+DatosNuevos <- data.frame(ELEVATION = levels(Cordon_Esquel$ELEVATION),
+                          YEAR = year_2025)
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_ZI_ABUNDANCE, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+FIG_ABUNDANCE_GLMM_elevation_B1_2025 <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = ELEVATION, 
+                 y = ABUNDANCE), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = ELEVATION, 
+                 y = mu), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = ELEVATION, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,8000),breaks = seq(0,8000, by=1000))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Abundance",
+       x= "Elevation",
+       title = paste("Year fixed at: 2025"))
+FIG_ABUNDANCE_GLMM_elevation_B1_2025
+
+#OPTION B2: see how the predicted values change across levels of factor YEAR, while keeping factor ELEVATION fixed at one level####
+#Level: AN####
+
+#YEAR Option B2: AN  
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+levels(Cordon_Esquel$ELEVATION)
+
+elevation_AN <- levels(Cordon_Esquel$ELEVATION)[1]
+elevation_AN
+
+DatosNuevos <- data.frame(ELEVATION = elevation_AN,
+                          YEAR = levels(Cordon_Esquel$YEAR))
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_ZI_ABUNDANCE, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+FIG_ABUNDANCE_GLMM_year_B2_AN <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = YEAR, 
+                 y = ABUNDANCE), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = YEAR, 
+                 y = mu), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = YEAR, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,8000),breaks = seq(0,8000, by=1000))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Abundance",
+       x= "Year",
+       title = paste("Elevation fixed at: AN"))
+FIG_ABUNDANCE_GLMM_year_B2_AN
+
+#Level: SA####
+
+#YEAR Option B2: SA  
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+
+levels(Cordon_Esquel$ELEVATION)
+
+elevation_SA <- levels(Cordon_Esquel$ELEVATION)[2]
+elevation_SA
+
+DatosNuevos <- data.frame(ELEVATION = elevation_SA,
+                          YEAR = levels(Cordon_Esquel$YEAR))
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_POISSON_ZI_ABUNDANCE, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+FIG_ABUNDANCE_GLMM_year_B2_SA <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = YEAR, 
+                 y = ABUNDANCE), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = YEAR, 
+                 y = mu), size= 2)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = YEAR, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,8000),breaks = seq(0,8000, by=1000))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Abundance",
+       x= "Year",
+       title = paste("Elevation fixed at: SA"))
+FIG_ABUNDANCE_GLMM_year_B2_SA
+##########
+
+#Beta LCBD GLMM vs X categorical####
+
+#Response variable: LCBD
+#Predictive variables: ELEVATION, YEAR 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_BETA_LCBD <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                                  ELEVATION*YEAR+
+                                  (1 |SITE),
+                                family = list(family="beta",link="logit"),
+                                data = Cordon_Esquel)
+Mod_BETA_LCBD
+
+summary(Mod_BETA_LCBD)
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_BETA_LCBD)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 1.2014, p-value = 0.568
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 1.2014, p-value = 0.716
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 1.2014, p-value = 0.284
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#Model selection:
+
+drop1(Mod_BETA_LCBD, test = "Chi")
+
+#Remove: ELEVATION:YEAR interaction
+Mod_BETA_LCBD_V2 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                           (1 |SITE),
+                         family = list(family="beta",link="logit"),
+                         data = Cordon_Esquel)
+Mod_BETA_LCBD_V2
+
+drop1(Mod_BETA_LCBD_V2, test = "Chi")
+
+#Remove: YEAR
+Mod_BETA_LCBD_V3 <- glmmTMB(LCBD ~ ELEVATION+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_V3
+
+drop1(Mod_BETA_LCBD_V3, test = "Chi")
+#Main marginal effects of ELEVATION
+#weak relationship
+
+#Model validation:
+RESIDUALS <- resid(Mod_BETA_LCBD_V3)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_BETA_LCBD_V3)
+PREDICTED
+
+#Graph residuals vs fitted values
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+
+#Graph residuals vs each covariate in the final model
+par(mfrow = c(1, 2)) 
+
+plot(x = Cordon_Esquel$ELEVATION, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Elevation",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$SITE, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Site",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+
+#Results:
+summary(Mod_BETA_LCBD_V3)
+
+#Output:
+#             Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)  -1.9840     0.1946 -10.196   <2e-16 ***
+#ELEVATIONSA  -0.4875     0.2531  -1.926   0.0541 .  
+
+drop1(Mod_BETA_LCBD_V3, test = "Chi")
+
+#Output:
+#LCBD ~ ELEVATION + (1 | SITE)
+#          Df     AIC    LRT Pr(>Chi)  
+#<none>       -122.97                  
+#ELEVATION  1 -121.81 3.1565  0.07562 .
+
+#Comparisons and contrasts
+CC_elevation <- emmeans(Mod_BETA_LCBD_V3, "ELEVATION")   
+CC_elevation
+
+contrast(CC_elevation, "pairwise")
+
+#Output:
+#contrast estimate    SE df t.ratio p.value
+#AN - SA     0.488 0.253 26   1.926  0.0651
+
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(LCBD, na.rm = TRUE),
+                           SD= sd(LCBD, na.rm = TRUE),
+                           n= sum(!is.na(LCBD)),
+                           SE= SD/sqrt(n),
+                           MIN=min(LCBD),
+                           MAX=max(LCBD))
+SUMMARY_MEASURES
+
+#Figure: Poisson LCBD GLMM####
+#OPTION A1: see how the predicted values change across levels of factor ELEVATION####
+
+#ELEVATION
+Mod_BETA_LCBD_V3 <- glmmTMB(LCBD ~ ELEVATION+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_V3
+
+DatosNuevos <- data.frame(ELEVATION = levels(Cordon_Esquel$ELEVATION))
+DatosNuevos
+
+#Ignore the random effects in the predictions
+DatosNuevos$SITE <- NA
+
+head(DatosNuevos) 
+
+#Get the corresponding predicted values for a typical site
+P1 <- predict(Mod_BETA_LCBD_V3, 
+              newdata = DatosNuevos, 
+              re.form =~ 0, 
+              se = TRUE)
+
+#Calculate the predicted values and 95% CI.
+DatosNuevos$mu   <- exp(P1$fit)
+DatosNuevos$SeUp <- exp(P1$fit + 1.96 * P1$se.fit) 
+DatosNuevos$SeLow <- exp(P1$fit - 1.96 * P1$se.fit) 
+head(DatosNuevos)
+
+summary(Cordon_Esquel$LCBD)
+summary(DatosNuevos$SeUp)
+
+FIG_LCBD_GLMM_elevation <- ggplot()+
+  geom_point(data = Cordon_Esquel, 
+             aes(x = ELEVATION, 
+                 y = LCBD), size= 2)+
+  geom_point(data = DatosNuevos, 
+             aes(x = ELEVATION, 
+                 y = mu), size= 4)+ 
+  geom_errorbar(data = DatosNuevos,
+                aes(x = ELEVATION, 
+                    ymax = SeUp, 
+                    ymin = SeLow), width=.06)+
+  theme_bw()+
+  scale_y_continuous(limits=c(0,0.3),breaks = seq(0,0.3, by=0.1))+
+  theme(axis.line= element_line(colour = "black", linewidth = 1),
+        panel.border=element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x=element_text(color = "black", size = 12),
+        axis.text.y=element_text(color = "black", size = 12),
+        axis.title.y = element_text(face="bold",color = "black", size = 16),
+        axis.title.x=element_text(face="bold",color = "black", size = 16),
+        legend.position = "none")+
+  labs(y= "Local contribution to beta diversity",
+       x= "Elevation")
+FIG_LCBD_GLMM_elevation
+##########
+#GLMM MODELS (X: environmental variables)####
+
+#Possible model beginnings based on collinearity values
+#Start 1: ALTITUDE, TEMPERATURE, CONDUCTIVITY, OD, PH, TSS, PO4, NH4, NO3NO2
+#Start 2: ALTITUDE, TEMPERATURE, CONDUCTIVITY, POR_OD, PH, TSS, PO4, NH4, NO3NO2
+
+#Poisson RICHNESS GLMM vs X environmental variables####
+
+#Response variable: RICHNESS
+#Predictive variables: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+#Start 1: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, PH, TSS, PO4, NH4, NO3NO2####
+Mod_POISSON_RICHNESS_s1 <- glmmTMB(RICHNESS ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                  (1 |SITE),
+                                family = poisson,
+                                data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1
+
+summary(Mod_POISSON_RICHNESS_s1)
+
+#Overdispersion parameter
+E1 <- resid(Mod_POISSON_RICHNESS_s1, type = "pearson")
+N  <- nrow(Cordon_Esquel)
+p  <- length(coef(Mod_POISSON_RICHNESS_s1))
+sum(E1^2) / (N - p)
+#0.9442835
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_RICHNESS_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.83786, p-value = 0.632
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.83786, p-value = 0.316
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.83786, p-value = 0.684
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 4.0323, p-value = 0.152
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#Model selection:
+
+drop1(Mod_POISSON_RICHNESS_s1, test = "Chi")
+
+#Remove: CONDUCTIVITY
+Mod_POISSON_RICHNESS_s1_v2 <- glmmTMB(RICHNESS ~ ELEVATION+TEMPERATURE+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                     (1 |SITE),
+                                   family = poisson,
+                                   data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v2
+
+drop1(Mod_POISSON_RICHNESS_s1_v2, test = "Chi")
+
+#Remove: NH4
+Mod_POISSON_RICHNESS_s1_v3 <- glmmTMB(RICHNESS ~ ELEVATION+TEMPERATURE+OD+PH+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v3
+
+drop1(Mod_POISSON_RICHNESS_s1_v3, test = "Chi")
+
+#Remove: PH 
+Mod_POISSON_RICHNESS_s1_v4 <- glmmTMB(RICHNESS ~ ELEVATION+OD+TEMPERATURE+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v4
+
+drop1(Mod_POISSON_RICHNESS_s1_v4, test = "Chi")
+
+#Remove: TEMPERATURE
+Mod_POISSON_RICHNESS_s1_v5 <- glmmTMB(RICHNESS ~ ELEVATION+OD+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v5
+
+drop1(Mod_POISSON_RICHNESS_s1_v5, test = "Chi")
+
+#Remove: OD
+Mod_POISSON_RICHNESS_s1_v6 <- glmmTMB(RICHNESS ~ ELEVATION+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v6
+
+drop1(Mod_POISSON_RICHNESS_s1_v6, test = "Chi")
+
+#Remove: TSS
+Mod_POISSON_RICHNESS_s1_v7 <- glmmTMB(RICHNESS ~ ELEVATION+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v7
+
+drop1(Mod_POISSON_RICHNESS_s1_v7, test = "Chi")
+
+#Interactions between environmental variables and elevation
+Mod_POISSON_RICHNESS_s1_v8 <- glmmTMB(RICHNESS ~ ELEVATION+PO4+NO3NO2+
+                                        ELEVATION*PO4+
+                                        ELEVATION*NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v8
+
+drop1(Mod_POISSON_RICHNESS_s1_v8, test = "Chi")
+#Interaction ELEVATION:PO4: non-significant
+#Interaction ELEVATION:NO3NO2: non-significant
+
+#Best model: 
+Mod_POISSON_RICHNESS_s1_v7 <- glmmTMB(RICHNESS ~ ELEVATION+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v7
+
+#Model validation:
+RESIDUALS <- resid(Mod_POISSON_RICHNESS_s1_v7)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_POISSON_RICHNESS_s1_v7)
+PREDICTED
+
+#Graph residuals vs fitted values
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+
+#Graph residuals vs each covariate in the final model
+par(mfrow = c(2, 2)) 
+
+plot(x = Cordon_Esquel$ELEVATION, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Elevation",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$PO4, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Phosphate",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$NO3NO2, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "nitrate + nitrite",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$SITE, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Site",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+
+#Results:
+summary(Mod_POISSON_RICHNESS_s1_v7)
+
+#Output:
+#             Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)  1.3348965  0.1618009   8.250  < 2e-16 ***
+#ELEVATIONSA  1.3277079  0.2083838   6.371 1.87e-10 ***
+#PO4         -0.0040158  0.0012902  -3.113  0.00185 ** 
+#NO3NO2       0.0032304  0.0007905   4.087 4.38e-05 ***   
+
+drop1(Mod_POISSON_RICHNESS_s1_v7, test = "Chi")
+
+#Output:
+#RICHNESS ~ ELEVATION + PO4 + NO3NO2 + (1 | SITE)
+#           Df    AIC    LRT  Pr(>Chi)    
+#<none>       164.75                     
+#ELEVATION  1 181.45 18.698 1.531e-05 ***
+#PO4        1 173.45 10.698 0.0010725 ** 
+#NO3NO2     1 176.58 13.829 0.0002002 ***
+
+#Comparisons and contrasts
+CC_elevation <- emmeans(Mod_POISSON_RICHNESS_s1_v7, "ELEVATION")   
+CC_elevation
+
+contrast(CC_elevation, "pairwise")
+
+#Output:
+#contrast estimate    SE df t.ratio p.value
+#AN - SA     -1.33 0.208 25  -6.371  <.0001
+
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(RICHNESS, na.rm = TRUE),
+                           SD= sd(RICHNESS, na.rm = TRUE),
+                           n= sum(!is.na(RICHNESS)),
+                           SE= SD/sqrt(n),
+                           MIN=min(RICHNESS),
+                           MAX=max(RICHNESS))
+SUMMARY_MEASURES
+
+#PO4
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(PO4, na.rm = TRUE),
+                           SD= sd(PO4, na.rm = TRUE),
+                           n= sum(!is.na(PO4)),
+                           SE= SD/sqrt(n),
+                           MIN=min(PO4),
+                           MAX=max(PO4))
+SUMMARY_MEASURES
+
+#NO3NO2
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(NO3NO2, na.rm = TRUE),
+                           SD= sd(NO3NO2, na.rm = TRUE),
+                           n= sum(!is.na(NO3NO2)),
+                           SE= SD/sqrt(n),
+                           MIN=min(NO3NO2),
+                           MAX=max(NO3NO2))
+SUMMARY_MEASURES
+
+#Start 2: ELEVATION, TEMPERATURE, CONDUCTIVITY, POR_OD, PH, TSS, PO4, NH4, NO3NO2####
+
+Mod_POISSON_RICHNESS_s2 <- glmmTMB(RICHNESS ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+POR_OD+PH+TSS+PO4+NH4+NO3NO2+
+                                     (1 |SITE),
+                                   family = poisson,
+                                   data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2
+
+summary(Mod_POISSON_RICHNESS_s2)
+
+#Overdispersion parameter
+E1 <- resid(Mod_POISSON_RICHNESS_s2, type = "pearson")
+N  <- nrow(Cordon_Esquel)
+p  <- length(coef(Mod_POISSON_RICHNESS_s2))
+sum(E1^2) / (N - p)
+#0.9506318
+
+#Model selection:
+
+drop1(Mod_POISSON_RICHNESS_s2, test = "Chi")
+
+#Remove: CONDUCTIVITY
+Mod_POISSON_RICHNESS_s2_v2 <- glmmTMB(RICHNESS ~ ELEVATION+TEMPERATURE+POR_OD+PH+TSS+PO4+NH4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v2
+
+drop1(Mod_POISSON_RICHNESS_s2_v2, test = "Chi")
+
+#Remove: NH4
+Mod_POISSON_RICHNESS_s2_v3 <- glmmTMB(RICHNESS ~ ELEVATION+TEMPERATURE+POR_OD+PH+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v3
+
+drop1(Mod_POISSON_RICHNESS_s2_v3, test = "Chi")
+
+#Remove: POR_OD 
+Mod_POISSON_RICHNESS_s2_v4 <- glmmTMB(RICHNESS ~ ELEVATION+PH+TEMPERATURE+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v4
+
+drop1(Mod_POISSON_RICHNESS_s2_v4, test = "Chi")
+
+#Remove: TEMPERATURE
+Mod_POISSON_RICHNESS_s2_v5 <- glmmTMB(RICHNESS ~ ELEVATION+PH+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v5
+
+drop1(Mod_POISSON_RICHNESS_s2_v5, test = "Chi")
+
+#Remove: TSS
+Mod_POISSON_RICHNESS_s2_v6 <- glmmTMB(RICHNESS ~ ELEVATION+PH+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v6
+
+drop1(Mod_POISSON_RICHNESS_s2_v6, test = "Chi")
+
+#Interactions between environmental variables and elevation
+Mod_POISSON_RICHNESS_s2_v7 <- glmmTMB(RICHNESS ~ ELEVATION+PH+PO4+NO3NO2+
+                                        ELEVATION*PH+
+                                        ELEVATION*PO4+
+                                        ELEVATION*NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v7
+
+drop1(Mod_POISSON_RICHNESS_s2_v7, test = "Chi")
+#Interaction ELEVATION:PH: non-significant
+#Interaction ELEVATION:PO4: non-significant
+#Interaction ELEVATION:NO3NO2: non-significant
+
+#Best model: 
+Mod_POISSON_RICHNESS_s2_v6 <- glmmTMB(RICHNESS ~ ELEVATION+PH+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v6
+
+#Model validation:
+RESIDUALS <- resid(Mod_POISSON_RICHNESS_s2_v6)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_POISSON_RICHNESS_s2_v6)
+PREDICTED
+
+#Graph residuals vs fitted values
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+
+#Graph residuals vs each covariate in the final model
+par(mfrow = c(2, 3)) 
+
+plot(x = Cordon_Esquel$ELEVATION, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Elevation",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$PH, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "pH",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$PO4, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Phosphate",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$NO3NO2, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "nitrate + nitrite",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$SITE, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Site",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+
+#Results:
+summary(Mod_POISSON_RICHNESS_s2_v6)
+
+#Output:
+#             Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)  2.5153262  0.5728843   4.391 1.13e-05 ***
+#ELEVATIONSA  1.4069280  0.2039130   6.900 5.21e-12 ***
+#PH          -0.1466812  0.0686584  -2.136 0.032648 *  
+#PO4         -0.0040732  0.0011488  -3.546 0.000392 ***
+#NO3NO2       0.0028566  0.0007694   3.713 0.000205 ***   
+
+drop1(Mod_POISSON_RICHNESS_s2_v6, test = "Chi")
+
+#Output:
+#RICHNESS ~ ELEVATION + PH + PO4 + NO3NO2 + (1 | SITE)
+#           Df    AIC     LRT  Pr(>Chi)    
+#<none>       162.30                      
+#ELEVATION  1 180.35 20.0545 7.527e-06 ***
+#PH         1 164.75  4.4548 0.0348026 *  
+#PO4        1 173.09 12.7870 0.0003490 ***
+#NO3NO2     1 172.04 11.7387 0.0006121 ***
+
+#Comparisons and contrasts
+CC_elevation <- emmeans(Mod_POISSON_RICHNESS_s2_v6, "ELEVATION")   
+CC_elevation
+
+contrast(CC_elevation, "pairwise")
+
+#Output:
+#contrast estimate    SE df t.ratio p.value
+#AN - SA     -1.41 0.204 24  -6.900  <.0001
+
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(RICHNESS, na.rm = TRUE),
+                           SD= sd(RICHNESS, na.rm = TRUE),
+                           n= sum(!is.na(RICHNESS)),
+                           SE= SD/sqrt(n),
+                           MIN=min(RICHNESS),
+                           MAX=max(RICHNESS))
+SUMMARY_MEASURES
+
+#PH
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(PH, na.rm = TRUE),
+                           SD= sd(PH, na.rm = TRUE),
+                           n= sum(!is.na(PH)),
+                           SE= SD/sqrt(n),
+                           MIN=min(PH),
+                           MAX=max(PH))
+SUMMARY_MEASURES
+
+#PO4
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(PO4, na.rm = TRUE),
+                           SD= sd(PO4, na.rm = TRUE),
+                           n= sum(!is.na(PO4)),
+                           SE= SD/sqrt(n),
+                           MIN=min(PO4),
+                           MAX=max(PO4))
+SUMMARY_MEASURES
+
+#NO3NO2
+SUMMARY_MEASURES <-  ddply(Cordon_Esquel, c("ELEVATION"), summarize,
+                           MEAN= mean(NO3NO2, na.rm = TRUE),
+                           SD= sd(NO3NO2, na.rm = TRUE),
+                           n= sum(!is.na(NO3NO2)),
+                           SE= SD/sqrt(n),
+                           MIN=min(NO3NO2),
+                           MAX=max(NO3NO2))
+SUMMARY_MEASURES
+
+#Comparison: best model start 1 and start 2 using r.squaredGLMM####
+
+#r.squaredGLMM start 1:
+r.squaredGLMM(Mod_POISSON_RICHNESS_s1_v7)
+
+#Output:
+#          R2m       R2c         
+#delta     0.8809012 0.8888232
+#lognormal 0.8847321 0.8926885
+#trigamma  0.8767889 0.8846739
+
+#R2m: marginal; la varianza explicada por el efecto fijo. 
+#R2c: condicional; la varianza explicada por el modelo entero incluyendo efecto fijo y aletario
+
+#r.squaredGLMM start 2:
+r.squaredGLMM(Mod_POISSON_RICHNESS_s2_v6)
+
+#Output:
+#          R2m       R2c         
+#delta     0.8882479 0.8882479
+#lognormal 0.8921307 0.8921307
+#trigamma  0.8840799 0.8840799
+
+AICs <- AIC(Mod_POISSON_RICHNESS_s1_v7, Mod_POISSON_RICHNESS_s2_v6)
+AICs
+#Output:
+#                           df      AIC
+#Mod_POISSON_RICHNESS_s1_v7  5 164.7550
+#Mod_POISSON_RICHNESS_s2_v6  6 162.3002
+
+#Best model: Start 2: Mod_POISSON_RICHNESS_s2_v6
+#Higher R2 and less AIC
+#Si bien el modelo 2 es mejor, PH no varia mucho en el gradiente
+#creo que prefiero un modelo mas simple con menos parametros
+#hablarlo con Mile y Lucho
+
+#Poisson ABUNDANCE GLMM vs X environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+#Start 1: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, PH, TSS, PO4, NH4, NO3NO2####
+Mod_POISSON_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                     (1 |SITE),
+                                   family = poisson,
+                                   data = Cordon_Esquel)
+Mod_POISSON_ABUNDANCE_s1
+
+summary(Mod_POISSON_ABUNDANCE_s1)
+
+#Overdispersion parameter
+E1 <- resid(Mod_POISSON_ABUNDANCE_s1, type = "pearson")
+N  <- nrow(Cordon_Esquel)
+p  <- length(coef(Mod_POISSON_ABUNDANCE_s1))
+sum(E1^2) / (N - p)
+#248.152
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_ABUNDANCE_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.0059697, p-value = 0.32
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.0059697, p-value = 0.16
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.0059697, p-value = 0.84
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 11.111, p-value = 0.04
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#overdispersion: no
+#zeroinflation: yes
+#6.7% of zeros
+
+#Negative Binomial ABUNDANCE GLMM vs X environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_NB_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                              (1 |SITE),
+                            family = "nbinom2",
+                            data = Cordon_Esquel)
+Mod_NB_ABUNDANCE_s1
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_NB_ABUNDANCE_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.28108, p-value = 0.056
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.28108, p-value = 0.028
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.28108, p-value = 0.972
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 21.739, p-value = 0.008
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation significant
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: yes
+#overdispersion: no
+#zeroinflation: yes
+#6.7% of zeros
+#NB distribution: no
+
+#Poisson Zeroinflated ABUNDANCE GLMM vs X environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_POISSON_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE_s1
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_ZI_ABUNDANCE_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.036447, p-value = 0.408
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.036447, p-value = 0.204
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.036447, p-value = 0.796
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 0.97656, p-value = 1
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: no
+#overdispersion: no
+#zeroinflation: no
+#Zero-Inflated Poisson Model ZIP GLMM: yes
+
+#Model selection:
+Mod_POISSON_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                         (1 |SITE),
+                                       family = poisson,
+                                       ziformula = ~1,
+                                       data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE_s1
+
+summary(Mod_POISSON_ZI_ABUNDANCE_s1)
+
+drop1(Mod_POISSON_ZI_ABUNDANCE_s1, test = "Chi")
+#Everything significant.....
+
+#Model validation:
+RESIDUALS <- resid(Mod_POISSON_ZI_ABUNDANCE_s1)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_POISSON_ZI_ABUNDANCE_s1)
+PREDICTED
+
+#Graph residuals vs fitted values
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+#potential issues with model fit...
+
+#Graph residuals vs each covariate in the final model
+par(mfrow = c(2, 2)) 
+
+plot(x = Cordon_Esquel$ELEVATION, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Elevation",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$PO4, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Phosphate",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$NO3NO2, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "nitrate + nitrite",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$SITE, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Site",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+
+#Negative Binomial Zeroinflated ABUNDANCE GLMM vs X environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_NB_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                         (1 |SITE),
+                                       family = "nbinom2",
+                                       ziformula = ~1,
+                                       data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_NB_ZI_ABUNDANCE_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.512, p-value = 0.408
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.512, p-value = 0.204
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.512, p-value = 0.796
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 0.96525, p-value = 1
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: no
+#overdispersion: no
+#zeroinflation: no
+#Zero-Inflated NB Model ZIP GLMM: yes
+
+#Model selection:
+Mod_NB_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                    (1 |SITE),
+                                  family = "nbinom2",
+                                  ziformula = ~1,
+                                  data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1
+
+summary(Mod_NB_ZI_ABUNDANCE_s1)
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1, test = "Chi")
+
+#Remove: PH
+Mod_NB_ZI_ABUNDANCE_s1_v2 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+TSS+PO4+NH4+NO3NO2+
+                                    (1 |SITE),
+                                  family = "nbinom2",
+                                  ziformula = ~1,
+                                  data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v2
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v2, test = "Chi")
+
+#Remove: OD
+Mod_NB_ZI_ABUNDANCE_s1_v3 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+TSS+PO4+NH4+NO3NO2+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v3
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v3, test = "Chi")
+
+#Remove: NO3NO2
+Mod_NB_ZI_ABUNDANCE_s1_v4 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+TSS+PO4+NH4+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v4
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v4, test = "Chi")
+
+#Remove: PO4
+Mod_NB_ZI_ABUNDANCE_s1_v5 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+TSS+NH4+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v5
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v5, test = "Chi")
+
+#Remove: NH4
+Mod_NB_ZI_ABUNDANCE_s1_v6 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+TSS+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v6
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v6, test = "Chi")
+
+#Remove: TSS
+Mod_NB_ZI_ABUNDANCE_s1_v7 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v7
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v7, test = "Chi")
+
+#Remove: CONDUCTIVITY
+Mod_NB_ZI_ABUNDANCE_s1_v8 <- glmmTMB(ABUNDANCE ~ ELEVATION+TEMPERATURE+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v8
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v8, test = "Chi")
+
+#Remove: TEMPERATURE
+Mod_NB_ZI_ABUNDANCE_s1_v9 <- glmmTMB(ABUNDANCE ~ ELEVATION+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v9
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v9, test = "Chi")
+#Elevation: Significant effect: 6.176e-06 ***
+
+#Best model: 
+Mod_NB_ZI_ABUNDANCE_s1_v9 <- glmmTMB(ABUNDANCE ~ ELEVATION+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v9
+
+#Model validation:
+RESIDUALS <- resid(Mod_NB_ZI_ABUNDANCE_s1_v9)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_NB_ZI_ABUNDANCE_s1_v9)
+PREDICTED
+
+#Graph residuals vs fitted values
+par(mfrow = c(1, 1))
+
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+#potential issues with model fit
+
+#Probe con todas las distribuciones posibles para
+#datos de conteo y sigue con problemas de ajuste....
+#No es un buen modelo
+
+#Beta LCBD GLMM vs X environmental variables####
+
+#Response variable: LCBD
+#Predictive variables: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2  
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+#Start 1: ELEVATION, TEMPERATURE, CONDUCTIVITY, OD, PH, TSS, PO4, NH4, NO3NO2####
+Mod_BETA_LCBD_s1 <- glmmTMB(LCBD ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                           (1 |SITE),
+                         family = list(family="beta",link="logit"),
+                         data = Cordon_Esquel)
+Mod_BETA_LCBD_s1
+
+summary(Mod_BETA_LCBD_s1)
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_BETA_LCBD_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 1.1253, p-value = 0.712
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 1.1253, p-value = 0.644
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 1.1253, p-value = 0.356
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#Model selection:
+Mod_BETA_LCBD_s1 <- glmmTMB(LCBD ~ ELEVATION+TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_s1
+
+drop1(Mod_BETA_LCBD_s1, test = "Chi")
+
+#Remove: CONDUCTIVITY
+Mod_BETA_LCBD_s1_v2 <- glmmTMB(LCBD ~ ELEVATION+TEMPERATURE+OD+PH+TSS+PO4+NH4+NO3NO2+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v2
+
+drop1(Mod_BETA_LCBD_s1_v2, test = "Chi")
+
+#Remove: OD
+Mod_BETA_LCBD_s1_v3 <- glmmTMB(LCBD ~ ELEVATION+TEMPERATURE+PH+TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v3
+
+drop1(Mod_BETA_LCBD_s1_v3, test = "Chi")
+
+#Remove: PH
+Mod_BETA_LCBD_s1_v4 <- glmmTMB(LCBD ~ ELEVATION+TEMPERATURE+TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v4
+
+drop1(Mod_BETA_LCBD_s1_v4, test = "Chi")
+
+#Remove: PO4
+Mod_BETA_LCBD_s1_v5 <- glmmTMB(LCBD ~ ELEVATION+TEMPERATURE+TSS+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v5
+
+drop1(Mod_BETA_LCBD_s1_v5, test = "Chi")
+
+#Remove: NO3NO2
+Mod_BETA_LCBD_s1_v6 <- glmmTMB(LCBD ~ ELEVATION+TEMPERATURE+TSS+NH4+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v6
+
+drop1(Mod_BETA_LCBD_s1_v6, test = "Chi")
+
+#Remove: TEMPERATURE
+Mod_BETA_LCBD_s1_v7 <- glmmTMB(LCBD ~ ELEVATION+TSS+NH4+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v7
+
+drop1(Mod_BETA_LCBD_s1_v7, test = "Chi")
+
+#Remove: TSS
+Mod_BETA_LCBD_s1_v8 <- glmmTMB(LCBD ~ ELEVATION+NH4+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v8
+
+drop1(Mod_BETA_LCBD_s1_v8, test = "Chi")
+
+#Remove: NH4
+Mod_BETA_LCBD_s1_v9 <- glmmTMB(LCBD ~ ELEVATION+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v9
+
+drop1(Mod_BETA_LCBD_s1_v9, test = "Chi")
+#ELEVATION: marginal effect
+
+#No retiene ninguna variable ambiental
+#Queda igual que el modelo con X Categorica
+##########
+
+#Voy a repetir los modelos pero en las X voy a incluir:
+#las categoricas y las ambientales
+#por ahi detectemos algun efecto de las ambientales vinculado
+#a alguna interaccion
+
+#GLMM MODELS (X: categorical and environmental variables)####
+
+#Poisson RICHNESS GLMM vs X categorical and environmental variables####
+
+#Response variable: RICHNESS
+#Predictive variables: ELEVATION, YEAR, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_POISSON_RICHNESS_s1 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                     ELEVATION*YEAR+
+                                     TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                     (1 |SITE),
+                                   family = poisson,
+                                   data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1
+
+summary(Mod_POISSON_RICHNESS_s1)
+
+#Overdispersion parameter
+E1 <- resid(Mod_POISSON_RICHNESS_s1, type = "pearson")
+N  <- nrow(Cordon_Esquel)
+p  <- length(coef(Mod_POISSON_RICHNESS_s1))
+sum(E1^2) / (N - p)
+#0.7755138
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_RICHNESS_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.5588, p-value = 0.088
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.5588, p-value = 0.044
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.5588, p-value = 0.956
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 3.7879, p-value = 0.16
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#Model selection:
+
+drop1(Mod_POISSON_RICHNESS_s1, test = "Chi")
+
+#Remove: ELEVATION:YEAR
+Mod_POISSON_RICHNESS_s1_v2 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                     TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                     (1 |SITE),
+                                   family = poisson,
+                                   data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v2
+
+drop1(Mod_POISSON_RICHNESS_s1_v2, test = "Chi")
+
+#Remove: CONDUCTIVITY
+Mod_POISSON_RICHNESS_s1_v3 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                        TEMPERATURE+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v3
+
+drop1(Mod_POISSON_RICHNESS_s1_v3, test = "Chi")
+
+#Remove: NH4
+Mod_POISSON_RICHNESS_s1_v4 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                        TEMPERATURE+OD+PH+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v4
+
+drop1(Mod_POISSON_RICHNESS_s1_v4, test = "Chi")
+
+#Remove: OD
+Mod_POISSON_RICHNESS_s1_v5 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                        TEMPERATURE+PH+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v5
+
+drop1(Mod_POISSON_RICHNESS_s1_v5, test = "Chi")
+
+#Remove: TEMPERATURE
+Mod_POISSON_RICHNESS_s1_v6 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                      PH+TSS+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v6
+
+drop1(Mod_POISSON_RICHNESS_s1_v6, test = "Chi")
+
+#Remove: TSS
+Mod_POISSON_RICHNESS_s1_v7 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                        PH+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v7
+
+drop1(Mod_POISSON_RICHNESS_s1_v7, test = "Chi")
+
+#Remove: YEAR
+Mod_POISSON_RICHNESS_s1_v8 <- glmmTMB(RICHNESS ~ ELEVATION+
+                                        PH+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v8
+
+drop1(Mod_POISSON_RICHNESS_s1_v8, test = "Chi")
+#ELEVATION: significant effect
+#PH: significant effect
+#PO4: significant effect
+#NO3NO2: significant effect
+
+#Best model: 
+Mod_POISSON_RICHNESS_s1_v8 <- glmmTMB(RICHNESS ~ ELEVATION+
+                                        PH+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v8
+
+#Model validation:
+RESIDUALS <- resid(Mod_POISSON_RICHNESS_s1_v8)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_POISSON_RICHNESS_s1_v8)
+PREDICTED
+
+#Graph residuals vs fitted values
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+
+#Graph residuals vs each covariate in the final model
+par(mfrow = c(2, 3)) 
+
+plot(x = Cordon_Esquel$ELEVATION, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Elevation",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$PH, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "pH",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$PO4, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Phosphate",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$NO3NO2, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "nitrate + nitrite",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+plot(x = Cordon_Esquel$SITE, 
+     y = RESIDUALS, 
+     ylab = "Residuals",
+     xlab = "Site",
+     main = "Model validation")
+abline(h = 0, lty = 2)
+
+#Results:
+summary(Mod_POISSON_RICHNESS_s1_v8)
+
+#Output:
+#             Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)  2.5153262  0.5728843   4.391 1.13e-05 ***
+#ELEVATIONSA  1.4069280  0.2039130   6.900 5.21e-12 ***
+#PH          -0.1466812  0.0686584  -2.136 0.032648 *  
+#PO4         -0.0040732  0.0011488  -3.546 0.000392 ***
+#NO3NO2       0.0028566  0.0007694   3.713 0.000205 ***  
+
+drop1(Mod_POISSON_RICHNESS_s1_v8, test = "Chi")
+
+#Output:
+#RICHNESS ~ ELEVATION + PH + PO4 + NO3NO2 + (1 | SITE)
+#           Df    AIC     LRT  Pr(>Chi)    
+#<none>       162.30                      
+#ELEVATION  1 180.35 20.0545 7.527e-06 ***
+#PH         1 164.75  4.4548 0.0348026 *  
+#PO4        1 173.09 12.7870 0.0003490 ***
+#NO3NO2     1 172.04 11.7387 0.0006121 ***
+
+#Se mantienen las mismas relaciones que para el primer modelo
+#de riqueza y variables ambientales (con PO4 y NO3NO2)
+#suma un efecto negativo y significativo del PH
+
+#Poisson ABUNDANCE GLMM vs X categorical and environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, YEAR, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_POISSON_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ABUNDANCE_s1
+
+summary(Mod_POISSON_ABUNDANCE_s1)
+
+#Overdispersion parameter
+E1 <- resid(Mod_POISSON_ABUNDANCE_s1, type = "pearson")
+N  <- nrow(Cordon_Esquel)
+p  <- length(coef(Mod_POISSON_ABUNDANCE_s1))
+sum(E1^2) / (N - p)
+#325.7269
+
+#Negative Binomial ABUNDANCE GLMM vs X categorical and environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, YEAR, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_NB_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                 ELEVATION*YEAR+
+                                 TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = "nbinom2",
+                               data = Cordon_Esquel)
+Mod_NB_ABUNDANCE_s1
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_NB_ABUNDANCE_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.010377, p-value = 0.08
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.010377, p-value = 0.04
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.010377, p-value = 0.96
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 12.821, p-value = 0.072
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation significant
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: yes
+#overdispersion: no
+#zeroinflation: no (marginal effect)
+#NB distribution: no
+
+#Poisson Zeroinflated ABUNDANCE GLMM vs X categorical and environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, YEAR, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_POISSON_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                         ELEVATION*YEAR+
+                                         TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                         (1 |SITE),
+                                       family = poisson,
+                                       ziformula = ~1,
+                                       data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE_s1
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_POISSON_ZI_ABUNDANCE_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.01166, p-value = 0.032
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.01166, p-value = 0.016
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.01166, p-value = 0.984
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 0.95057, p-value = 1
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: yes
+#overdispersion: no
+#zeroinflation: no
+#Zero-Inflated Poisson Model ZIP GLMM: yes
+
+#Model selection:
+Mod_POISSON_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                         ELEVATION*YEAR+
+                                         TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                         (1 |SITE),
+                                       family = poisson,
+                                       ziformula = ~1,
+                                       data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE_s1
+
+summary(Mod_POISSON_ZI_ABUNDANCE_s1)
+
+drop1(Mod_POISSON_ZI_ABUNDANCE_s1, test = "Chi")
+#Everything significant.....
+
+#Negative Binomial Zeroinflated ABUNDANCE GLMM vs X categorical and environmental variables####
+
+#Response variable: ABUNDANCE
+#Predictive variables: ELEVATION, YEAR, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2 
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_NB_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                    ELEVATION*YEAR+
+                                    TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                    (1 |SITE),
+                                  family = "nbinom2",
+                                  ziformula = ~1,
+                                  data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_NB_ZI_ABUNDANCE_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.59131, p-value = 0.52
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.59131, p-value = 0.26
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.59131, p-value = 0.74
+
+#ZeroInflation:
+testZeroInflation(simulationOutput)
+#ratioObsSim = 1.0246, p-value = 1
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#According to DHARMA:
+#underdispersion: no
+#overdispersion: no
+#zeroinflation: no
+#Zero-Inflated NB Model ZIP GLMM: yes
+
+#Model selection:
+Mod_NB_ZI_ABUNDANCE_s1 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                    ELEVATION*YEAR+
+                                    TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                                    (1 |SITE),
+                                  family = "nbinom2",
+                                  ziformula = ~1,
+                                  data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1
+
+summary(Mod_NB_ZI_ABUNDANCE_s1)
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1, test = "Chi")
+
+#Remove: NO3NO2
+Mod_NB_ZI_ABUNDANCE_s1_v2 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                    ELEVATION*YEAR+
+                                    TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+
+                                    (1 |SITE),
+                                  family = "nbinom2",
+                                  ziformula = ~1,
+                                  data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v2
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v2, test = "Chi")
+
+#Remove: PO4
+Mod_NB_ZI_ABUNDANCE_s1_v3 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+NH4+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v3
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v3, test = "Chi")
+
+#Remove: OD
+Mod_NB_ZI_ABUNDANCE_s1_v4 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       TEMPERATURE+CONDUCTIVITY+PH+TSS+NH4+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v4
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v4, test = "Chi")
+
+#Remove: PH
+Mod_NB_ZI_ABUNDANCE_s1_v5 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       TEMPERATURE+CONDUCTIVITY+TSS+NH4+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v5
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v5, test = "Chi")
+
+#Remove: CONDUCTIVITY
+Mod_NB_ZI_ABUNDANCE_s1_v6 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       TEMPERATURE+TSS+NH4+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v6
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v6, test = "Chi")
+
+#Remove: TEMPERATURE
+Mod_NB_ZI_ABUNDANCE_s1_v7 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       TSS+NH4+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v7
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v7, test = "Chi")
+
+#Remove: NH4
+Mod_NB_ZI_ABUNDANCE_s1_v8 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       TSS+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v8
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v8, test = "Chi")
+#Model convergence problem
+
+#Remove: TSS
+Mod_NB_ZI_ABUNDANCE_s1_v9 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v9
+
+drop1(Mod_NB_ZI_ABUNDANCE_s1_v9, test = "Chi")
+#Interaction ELEVATION:YEAR: significant effect
+#Solo retuvo la interaccion de elevacion por año
+#no retuvo ninguna variable ambiental
+
+#Model validation:
+RESIDUALS <- resid(Mod_NB_ZI_ABUNDANCE_s1_v9)
+RESIDUALS
+
+PREDICTED <- fitted(Mod_NB_ZI_ABUNDANCE_s1_v9)
+PREDICTED
+
+#Graph residuals vs fitted values
+par(mfrow = c(1, 1))
+
+plot(x = PREDICTED, 
+     y = RESIDUALS,
+     xlab = "Fitted values",
+     ylab = "Residuals")
+abline(h = 0, lty = 2)
+#potential issues with model fit
+#No es un buen modelo con esta distribucion, tiene problemas de ajuste
+#Ver que dice Dharma
+#Igual no retuvo ninguna variable ambiental
+
+#Beta LCBD GLMM vs X categorical and environmental variables####
+
+#Response variable: LCBD
+#Predictive variables: ELEVATION, YEAR, TEMPERATURE, CONDUCTIVITY, OD, POR_OD, PH, TSS, PO4, NH4, NO3NO2  
+#Random factor: SITE (Imposes dependency between observations from the same SITE, i = 1, ..., 10) 
+
+Mod_BETA_LCBD_s1 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                              ELEVATION*YEAR+
+                              TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_s1
+
+summary(Mod_BETA_LCBD_s1)
+
+#DHARMA: Residual Diagnostics
+#Overdispersion:
+simulationOutput <- simulateResiduals(fittedModel = Mod_BETA_LCBD_s1)
+
+#Default DHARMa dispersion test (two.sided):
+testDispersion(simulationOutput)
+#dispersion = 0.75501, p-value = 0.8
+
+#Only underdispersion:
+testDispersion(simulationOutput, alternative = "less", plot = FALSE) 
+#dispersion = 0.75501, p-value = 0.4
+
+#Only oversispersion
+testDispersion(simulationOutput, alternative = "greater", plot = FALSE) 
+#dispersion = 0.75501, p-value = 0.6
+
+plot(simulationOutput)
+
+# left plot in plot.DHARMa():
+plotQQunif(simulationOutput) 
+#plotQQunif (left panel) creates a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers.
+#KS test: Deviation NS
+#Dispersion test: Deviation NS
+#Outlier test: Deviation NS
+
+#Model selection:
+Mod_BETA_LCBD_s1 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                              ELEVATION*YEAR+
+                              TEMPERATURE+CONDUCTIVITY+OD+PH+TSS+PO4+NH4+NO3NO2+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_s1
+
+drop1(Mod_BETA_LCBD_s1, test = "Chi")
+
+#Remove: CONDUCTIVITY
+Mod_BETA_LCBD_s1_v2 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                              ELEVATION*YEAR+
+                              TEMPERATURE+OD+PH+TSS+PO4+NH4+NO3NO2+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v2
+
+drop1(Mod_BETA_LCBD_s1_v2, test = "Chi")
+
+#Remove: OD
+Mod_BETA_LCBD_s1_v3 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                                 ELEVATION*YEAR+
+                                 TEMPERATURE+PH+TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v3
+
+drop1(Mod_BETA_LCBD_s1_v3, test = "Chi")
+
+#Remove: TEMPERATURE
+Mod_BETA_LCBD_s1_v4 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                                 ELEVATION*YEAR+
+                                 PH+TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v4
+
+drop1(Mod_BETA_LCBD_s1_v4, test = "Chi")
+
+#Remove: ELEVATION:YEAR
+Mod_BETA_LCBD_s1_v5 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                                 PH+TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v5
+
+drop1(Mod_BETA_LCBD_s1_v5, test = "Chi")
+
+#Remove: PH
+Mod_BETA_LCBD_s1_v6 <- glmmTMB(LCBD ~ ELEVATION+YEAR+
+                                 TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v6
+
+drop1(Mod_BETA_LCBD_s1_v6, test = "Chi")
+
+#Remove: YEAR
+Mod_BETA_LCBD_s1_v7 <- glmmTMB(LCBD ~ ELEVATION+
+                                 TSS+PO4+NH4+NO3NO2+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v7
+
+drop1(Mod_BETA_LCBD_s1_v7, test = "Chi")
+
+#Remove: NO3NO2
+Mod_BETA_LCBD_s1_v8 <- glmmTMB(LCBD ~ ELEVATION+
+                                 TSS+PO4+NH4+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v8
+
+drop1(Mod_BETA_LCBD_s1_v8, test = "Chi")
+
+#Remove: PO4
+Mod_BETA_LCBD_s1_v9 <- glmmTMB(LCBD ~ ELEVATION+
+                                 TSS+NH4+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v9
+
+drop1(Mod_BETA_LCBD_s1_v9, test = "Chi")
+
+#Remove: TSS
+Mod_BETA_LCBD_s1_v10 <- glmmTMB(LCBD ~ ELEVATION+
+                                 NH4+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v10
+
+drop1(Mod_BETA_LCBD_s1_v10, test = "Chi")
+
+#Remove: NH4
+Mod_BETA_LCBD_s1_v11 <- glmmTMB(LCBD ~ ELEVATION+
+                                  (1 |SITE),
+                                family = list(family="beta",link="logit"),
+                                data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v11
+
+drop1(Mod_BETA_LCBD_s1_v11, test = "Chi")
+#ELEVATION: marginal effect
+
+#Queda igual que los anteriores, solo retiene elevacion
+#no retiene ninguna variable ambiental
+##########
+
+#RESUMEN####
+#Corri tres bloques de modelos para las variables respuesta
+#RICHNESS, ABUNDANCE y LCBD
+
+#Bloque 1: los predictores eran: X categorical
+#ELEVATION y YEAR
+
+#Bloque 2: los predictores eran: X environmental variables
+#En funcion de la colinealidad estableci dos posibles inicios:
+#Start 1: ALTITUDE, TEMPERATURE, CONDUCTIVITY, OD, PH, TSS, PO4, NH4, NO3NO2
+#Start 2: ALTITUDE, TEMPERATURE, CONDUCTIVITY, POR_OD, PH, TSS, PO4, NH4, NO3NO2
+#Intente correr los modelos con la variable ALTITUDE numerica
+#Pero no corrian bien, no estimaba los parametros del modelo
+#Cambie ALTITUDE por ELEVATION que era parecido, pero categorica
+
+#Bloque 3: los predictores eran: X categorical and environmental variables
+#ELEVATION y YEAR
+#ELEVATION*YEAR (la interaccion)
+#TEMPERATURE, CONDUCTIVITY, OD, PH, TSS, PO4, NH4, NO3NO2
+
+#Resultados de los bloques de modelos
+#Bloque 1: RICHNESS
+
+#Mejor modelo:
+Mod_POISSON_RICHNESS_V2 <- glmmTMB(RICHNESS ~ ELEVATION+YEAR+
+                                     (1 |SITE),
+                                   family = poisson,
+                                   data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_V2
+#Detecto efectos siginificativos (main effects) de los factores ELEVATION y YEAR
+#Distribucion: poisson
+
+#Bloque 1: ABUNDANCE
+
+#Mejor modelo:
+Mod_POISSON_ZI_ABUNDANCE <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                      ELEVATION*YEAR+
+                                      (1 |SITE),
+                                    family = poisson,
+                                    ziformula = ~1,
+                                    data = Cordon_Esquel)
+Mod_POISSON_ZI_ABUNDANCE
+#Detecto efecto siginificativo de la interacion de los factores ELEVATION por YEAR
+#Distribucion: poisson
+#Inflado en ceros
+#potential issues with model fit: cuando veo el grafico de residuos VS predichos
+#Dharma: no detecta problemas mayores
+
+#Bloque 1: LCBD
+
+#Mejor modelo:
+Mod_BETA_LCBD_V3 <- glmmTMB(LCBD ~ ELEVATION+
+                              (1 |SITE),
+                            family = list(family="beta",link="logit"),
+                            data = Cordon_Esquel)
+Mod_BETA_LCBD_V3
+#Detecto efecto marginalmente siginificativo del factor ELEVATION
+#Distribucion: beta
+
+#Bloque 2: RICHNESS
+
+#Mejor modelo del Start 1:
+Mod_POISSON_RICHNESS_s1_v7 <- glmmTMB(RICHNESS ~ ELEVATION+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v7
+#Detecto efectos siginificativos del factor ELEVATION
+#y de las variables ambientales PO4 y NO3NO2
+#PO4: efecto negativo
+#NO3NO2: efecto positivo
+#Distribucion: poisson
+
+#Mejor modelo del Start 2:
+Mod_POISSON_RICHNESS_s2_v6 <- glmmTMB(RICHNESS ~ ELEVATION+PH+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s2_v6
+#Detecto efectos siginificativos del factor ELEVATION
+#y de las variables ambientales PH, PO4 y NO3NO2
+#PH: efecto negativo
+#PO4: efecto negativo
+#NO3NO2: efecto positivo
+#Distribucion: poisson
+
+#Comparacion Start 1 VS start 2: 
+#Mejor modelo: Start 2 Mod_POISSON_RICHNESS_s2_v6
+#Valores mas altos de R2 y menores de AIC
+#Si bien el modelo del start 2 es mejor, PH no varia mucho en el gradiente
+#creo que prefiero un modelo mas simple con menos parametros
+
+#Bloque 2: ABUNDANCE
+
+#Mejor modelo del Start 1:
+Mod_NB_ZI_ABUNDANCE_s1_v9 <- glmmTMB(ABUNDANCE ~ ELEVATION+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v9
+#Detecto efectos siginificativos del factor ELEVATION
+#no retiene variables ambientales
+#Distribucion: binomial negativa inflada en ceros
+#segun Dharma esta bien, pero en el grafico de residuos vs predichos
+#se ve un patron feo.
+#la distribucion poisson inflada en ceros segun Dharma esta bien
+#pero retiene todo como significativo....
+
+#Bloque 2: LCBD
+
+#Mejor modelo del Start 1:
+Mod_BETA_LCBD_s1_v9 <- glmmTMB(LCBD ~ ELEVATION+
+                                 (1 |SITE),
+                               family = list(family="beta",link="logit"),
+                               data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v9
+#Detecto un efecto marginalmente siginificativos del factor ELEVATION
+#Distribucion: beta
+#no retiene variables ambientales
+
+#Bloque 3: RICHNESS
+
+#Mejor modelo del Start 1:
+Mod_POISSON_RICHNESS_s1_v8 <- glmmTMB(RICHNESS ~ ELEVATION+
+                                        PH+PO4+NO3NO2+
+                                        (1 |SITE),
+                                      family = poisson,
+                                      data = Cordon_Esquel)
+Mod_POISSON_RICHNESS_s1_v8
+#Detecto efectos siginificativos del factor ELEVATION
+#y de las variables ambientales PH, PO4 y NO3NO2
+#PH: efecto negativo
+#PO4: efecto negativo
+#NO3NO2: efecto positivo
+#Distribucion: poisson
+
+#Bloque 3: ABUNDANCE
+
+#Mejor modelo del Start 1:
+Mod_NB_ZI_ABUNDANCE_s1_v9 <- glmmTMB(ABUNDANCE ~ ELEVATION+YEAR+
+                                       ELEVATION*YEAR+
+                                       (1 |SITE),
+                                     family = "nbinom2",
+                                     ziformula = ~1,
+                                     data = Cordon_Esquel)
+Mod_NB_ZI_ABUNDANCE_s1_v9
+#Detecto efectos siginificativos de la interaccion de los factores ELEVATION por AÑO
+#Distribucion: binomial negativa inflada en ceros
+#se ven problemas de ajuste, pero dharma dice que esta OK
+
+#Bloque 3: LCBD
+
+#Mejor modelo del Start 1:
+Mod_BETA_LCBD_s1_v11 <- glmmTMB(LCBD ~ ELEVATION+
+                                  (1 |SITE),
+                                family = list(family="beta",link="logit"),
+                                data = Cordon_Esquel)
+Mod_BETA_LCBD_s1_v11
+
+#Detecto efecto marginalmente siginificativo del factor ELEVATION por AÑO
+#Distribucion: beta
+
+
+
+
+
+
+
+
+
