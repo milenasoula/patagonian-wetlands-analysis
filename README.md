@@ -54,6 +54,31 @@ Modeled abundance patterns across Andean and sub-Andean wetlands showed strong i
 
 ![](figures/macroinvertebrate_abundance_temporal.png)
 
+
+## Model outputs
+
+### Environmental summary statistics
+
+Summary of physicochemical variables measured across Andean and sub-Andean wetlands during the 2018, 2024, and 2025 sampling campaigns.
+
+![](results/environmental_summary_table.png)
+
+---
+
+### GLMM results — Block 1
+
+Generalized Linear Mixed Models evaluating relationships between taxonomic richness, elevation, and nutrient concentrations.
+
+![](results/glmm_block1_results.png)
+
+---
+
+### GLMM results — Block 2
+
+Generalized Linear Mixed Models evaluating spatial and temporal variability in richness, abundance, and local contribution to beta diversity (LCBD).
+
+![](results/glmm_block2_results.png)
+
 ---
 
 ### Local contribution to beta diversity (LCBD)
