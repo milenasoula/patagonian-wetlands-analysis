@@ -35,3 +35,29 @@ Methods included:
 ## Study system
 
 Mountain wetlands from Cordón Esquel, Patagonia, Argentina.
+
+![](figures/study_system_patagonia_wetlands.png)
+
+## Example figures
+
+### Environmental predictors of macroinvertebrate richness
+
+Generalized Linear Mixed Models (GLMM) revealed significant relationships between taxonomic richness, elevation, and nutrient concentrations across mountain wetlands.
+
+![](figures/richness_environmental_glmm.png)
+
+---
+
+### Spatial and temporal variability in macroinvertebrate abundance
+
+Modeled abundance patterns across Andean and sub-Andean wetlands showed strong interannual variability and significant elevation × year interactions.
+
+![](figures/macroinvertebrate_abundance_temporal.png)
+
+---
+
+### Local contribution to beta diversity (LCBD)
+
+LCBD analyses highlighted spatial differences in community uniqueness between wetland types.
+
+![](figures/lcbd_elevation_model.png)
