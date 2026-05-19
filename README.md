@@ -28,7 +28,7 @@ Methods included:
 
 ## Repository structure
 
-- `scripts/` → data cleaning, modeling, and visualization script
+- `scripts/` → data cleaning, modeling, and visualization scripts
 - `figures/` → selected figures and plots
 - `results/` → model outputs and processed results
 
@@ -54,6 +54,13 @@ Modeled abundance patterns across Andean and sub-Andean wetlands showed strong i
 
 ![](figures/macroinvertebrate_abundance_temporal.png)
 
+---
+
+### Local contribution to beta diversity (LCBD)
+
+LCBD analyses highlighted spatial differences in community uniqueness between wetland types.
+
+![](figures/lcbd_elevation_model.png)
 
 ## Model outputs
 
@@ -69,7 +76,7 @@ Summary of physicochemical variables measured across Andean and sub-Andean wetla
 
 Generalized Linear Mixed Models evaluating relationships between taxonomic richness, elevation, and nutrient concentrations.
 
-![](results/glmm_block1_results.png)
+![](results/glmm_block1_results.PNG)
 
 ---
 
@@ -77,12 +84,4 @@ Generalized Linear Mixed Models evaluating relationships between taxonomic richn
 
 Generalized Linear Mixed Models evaluating spatial and temporal variability in richness, abundance, and local contribution to beta diversity (LCBD).
 
-![](results/glmm_block2_results.png)
-
----
-
-### Local contribution to beta diversity (LCBD)
-
-LCBD analyses highlighted spatial differences in community uniqueness between wetland types.
-
-![](figures/lcbd_elevation_model.png)
+![](results/glmm_block2_results.PNG)
