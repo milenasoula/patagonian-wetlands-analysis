@@ -26,10 +26,22 @@ Methods included:
 
 ## Repository structure
 
-- `scripts/` → data cleaning, modeling, and visualization scripts
-- `figures/analysis/` → statistical figures and model visualizations
-- `results/` → model outputs and processed results
-- `figures/fieldwork/` → field campaigns and ecosystem photography
+- `scripts/` → R scripts for data cleaning, statistical modeling, LCBD analysis, and figure generation
+- `figures/analysis/` → study system map, statistical figures, and model visualizations
+- `figures/fieldwork/` → field campaign, wetland ecosystem, sampling, and laboratory photography
+- `results/` → summary tables and GLMM model outputs
+
+## README structure
+
+- `Abstract` → project context, objectives, analytical approach, and main ecological relevance
+- `Methods` → summary of the statistical and ecological methods used
+- `Study system` → geographic and ecological context of the sampled wetlands
+- `Example figures` → selected visual outputs from the environmental and biodiversity analyses
+- `Model outputs` → summarized environmental data and GLMM results
+- `Key findings` → main patterns identified across elevation, nutrients, and years
+- `Ecological interpretation and conservation relevance` → broader implications for monitoring, climate sensitivity, and conservation
+- `Skills demonstrated` → technical, analytical, fieldwork, and laboratory skills shown by the project
+- `Reproducibility` → basic instructions for reproducing the analytical workflow
 
 ## Study system
 
