@@ -52,7 +52,9 @@ Generalized Linear Mixed Models (GLMM) revealed significant relationships betwee
 
 Modeled abundance patterns across Andean and Subandean wetlands showed strong interannual variability and significant elevation × year interactions.
 
-![](figures/macroinvertebrate_abundance_temporal.png)
+<p align="center">
+  <img src="figures/macroinvertebrate_abundance_temporal.png" width="75%">
+</p>
 
 ---
 
@@ -60,7 +62,9 @@ Modeled abundance patterns across Andean and Subandean wetlands showed strong in
 
 LCBD analyses highlighted spatial differences in community uniqueness between wetland types.
 
-![](figures/lcbd_elevation_model.png)
+<p align="center">
+  <img src="figures/lcbd_elevation_model.png" width="45%">
+</p>
 
 ## Model outputs
 
