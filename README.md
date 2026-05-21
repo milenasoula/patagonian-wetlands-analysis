@@ -91,7 +91,7 @@ Generalized Linear Mixed Models evaluating spatial and temporal variability in r
 
 - Mountain wetlands from the Esquel Mountain Range showed clear environmental differentiation along the altitudinal gradient.
 
-- Sub-Andean wetlands exhibited:
+- Subandean wetlands exhibited:
   - higher temperatures,
   - higher conductivity,
   - and increased nutrient concentrations.
