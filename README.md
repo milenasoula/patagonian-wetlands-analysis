@@ -6,8 +6,6 @@ Environmental and multivariate analysis of Patagonian mountain wetlands using R.
 
 Patagonian mountain wetlands are biodiversity-rich ecosystems exposed to increasing climatic and anthropogenic pressures. This project evaluates spatial and temporal patterns of aquatic macroinvertebrate communities across Andean and Subandean wetlands using physicochemical measurements, Generalized Linear Mixed Models (GLMM), and beta diversity analyses (LCBD). Results highlight strong elevation effects, nutrient-related biodiversity responses, and marked interannual variability associated with climatic conditions.
 
----
-
 ## Methods
 
 Methods included:
@@ -30,20 +28,15 @@ Methods included:
 
 - `scripts/` → data cleaning, modeling, and visualization scripts
 - `figures/analysis/` → statistical figures and model visualizations
-- `figures/fieldwork/` → field campaigns and ecosystem photography
 - `results/` → model outputs and processed results
-
----
+- `figures/fieldwork/` → field campaigns and ecosystem photography
 
 ## Study system
 
 Mountain wetlands from Cordón Esquel, Patagonia, Argentina.
 
-![](./figures/analysis/study_system_patagonia_wetlands.png)
-
+![](figures/analysis/study_system_patagonia_wetlands.png)
 *Location of Andean and Subandean wetlands sampled across the Esquel Mountain Range, Patagonia, Argentina.*
-
----
 
 ## Example figures
 
@@ -51,7 +44,7 @@ Mountain wetlands from Cordón Esquel, Patagonia, Argentina.
 
 Generalized Linear Mixed Models (GLMM) revealed significant relationships between taxonomic richness, elevation, and nutrient concentrations across mountain wetlands.
 
-![](./figures/analysis/richness_environmental_glmm.png)
+![](figures/analysis/richness_environmental_glmm.png)
 
 ---
 
@@ -59,7 +52,9 @@ Generalized Linear Mixed Models (GLMM) revealed significant relationships betwee
 
 Modeled abundance patterns across Andean and Subandean wetlands showed strong interannual variability and significant elevation × year interactions.
 
-![](./figures/analysis/macroinvertebrate_abundance_temporal.png)
+<p align="center">
+  <img src="figures/analysis/macroinvertebrate_abundance_temporal.png" width="75%">
+</p>
 
 ---
 
@@ -67,9 +62,9 @@ Modeled abundance patterns across Andean and Subandean wetlands showed strong in
 
 LCBD analyses highlighted spatial differences in community uniqueness between wetland types.
 
-![](./figures/analysis/lcbd_elevation_model.png)
-
----
+<p align="center">
+  <img src="figures/analysis/lcbd_elevation_model.png" width="45%">
+</p>
 
 ## Model outputs
 
@@ -77,7 +72,7 @@ LCBD analyses highlighted spatial differences in community uniqueness between we
 
 Summary of physicochemical variables measured across Andean and Subandean wetlands during the 2018, 2024, and 2025 sampling campaigns.
 
-![](./results/environmental_summary_table.png)
+![](results/environmental_summary_table.png)
 
 ---
 
@@ -85,7 +80,7 @@ Summary of physicochemical variables measured across Andean and Subandean wetlan
 
 Generalized Linear Mixed Models evaluating relationships between taxonomic richness, elevation, and nutrient concentrations.
 
-![](./results/glmm_block1_results.png)
+![](results/glmm_block1_results.PNG)
 
 ---
 
@@ -93,9 +88,8 @@ Generalized Linear Mixed Models evaluating relationships between taxonomic richn
 
 Generalized Linear Mixed Models evaluating spatial and temporal variability in richness, abundance, and local contribution to beta diversity (LCBD).
 
-![](./results/glmm_block2_results.png)
+![](results/glmm_block2_results.PNG)
 
----
 
 ## Key findings
 
@@ -124,13 +118,11 @@ Generalized Linear Mixed Models evaluating spatial and temporal variability in r
 
 - Results suggest that mountain wetlands are highly sensitive ecosystems where both local physicochemical conditions and large-scale climatic variability shape biological assemblages.
 
-| | |
-|---|---|
-| ![](./figures/fieldwork/high_mountain_fieldwork.png) | ![](./figures/fieldwork/andean_sampling_campaign.png) |
-
+<p align="center">
+  <img src="figures/fieldwork/high_mountain_fieldwork.png" width="48%">
+  <img src="figures/fieldwork/andean_sampling_campaign.png" width="48%">
+</p>
 *High-elevation field campaigns and wetland sampling across Andean Patagonia.*
-
----
 
 ## Ecological interpretation and conservation relevance
 
@@ -149,13 +141,11 @@ These ecosystems are exposed to increasing anthropogenic pressures including:
 
 Because mountain wetlands act as biodiversity reservoirs and freshwater regulation systems, long-term ecological monitoring is essential for conservation and management strategies under climate change scenarios.
 
-| | |
-|---|---|
-| ![](./figures/fieldwork/andean_wetland_climate_sensitivity.png) | ![](./figures/fieldwork/subandean_wetland_ecosystem.png) |
-
+<p align="center">
+  <img src="figures/fieldwork/andean_wetland_climate_sensitivity.png" width="48%">
+  <img src="figures/fieldwork/subandean_wetland_ecosystem.png" width="48%">
+</p>
 *Contrasting Andean and Subandean wetland ecosystems sampled during the study.*
-
----
 
 ## Skills demonstrated
 
@@ -171,13 +161,15 @@ Because mountain wetlands act as biodiversity reservoirs and freshwater regulati
 - Physicochemical and biological sample collection and processing
 - Integration of field ecology, laboratory analyses, and quantitative data analysis
 
-| | |
-|---|---|
-| ![](./figures/fieldwork/wetland_macroinvertebrate_sampling.png) | ![](./figures/fieldwork/macroinvertebrate_samples.png) |
-
+<p align="center">
+  <img src="figures/fieldwork/wetland_macroinvertebrate_sampling.png" width="48%">
+  <img src="figures/fieldwork/macroinvertebrate_samples.png" width="48%">
+</p>
 *Aquatic macroinvertebrate sampling and laboratory sample processing.*
 
-![](./figures/fieldwork/case_building_caddisfly.png)
+<p align="center">
+  <img src="figures/fieldwork/case_building_caddisfly.png" width="35%">
+</p>
 
 *Case-building caddisfly larva collected from Patagonian mountain wetlands.*
 
