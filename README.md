@@ -35,7 +35,8 @@ Methods included:
 
 Mountain wetlands from Cordón Esquel, Patagonia, Argentina.
 
-![](figures/analysis/study_system_patagonia_wetlands.png)
+![](./figures/analysis/study_system_patagonia_wetlands.png)
+
 *Location of Andean and Subandean wetlands sampled across the Esquel Mountain Range, Patagonia, Argentina.*
 
 ## Example figures
@@ -44,7 +45,7 @@ Mountain wetlands from Cordón Esquel, Patagonia, Argentina.
 
 Generalized Linear Mixed Models (GLMM) revealed significant relationships between taxonomic richness, elevation, and nutrient concentrations across mountain wetlands.
 
-![](figures/analysis/richness_environmental_glmm.png)
+![](./figures/analysis/richness_environmental_glmm.png)
 
 ---
 
