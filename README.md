@@ -26,10 +26,10 @@ Methods included:
 
 ## Repository structure
 
-- `scripts/` → R scripts for data cleaning, statistical modeling, LCBD analysis, and figure generation
 - `figures/analysis/` → study system map, statistical figures, and model visualizations
 - `figures/fieldwork/` → field campaign, wetland ecosystem, sampling, and laboratory photography
 - `results/` → summary tables and GLMM model outputs
+- `scripts/` → R scripts for data cleaning, statistical modeling, LCBD analysis, and figure generation
 
 ## README structure
 
