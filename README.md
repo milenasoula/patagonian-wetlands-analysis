@@ -129,7 +129,7 @@ Generalized Linear Mixed Models evaluating spatial and temporal variability in r
   - while LCBD remained comparatively stable.
 
 - Results suggest that mountain wetlands are highly sensitive ecosystems where both local physicochemical conditions and large-scale climatic variability shape biological assemblages.
-
+  
 <p align="center">
   <img src="figures/fieldwork/high_mountain_fieldwork.png" width="48%">
   <img src="figures/fieldwork/andean_sampling_campaign.png" width="48%">
