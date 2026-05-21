@@ -8,12 +8,6 @@ Patagonian mountain wetlands are biodiversity-rich ecosystems exposed to increas
 
 ---
 
-## Overview
-
-This project explores the spatial and temporal variability of aquatic macroinvertebrate communities in Patagonian mountain wetlands using physicochemical and environmental data.
-
-The analysis evaluates how altitude, nutrient availability, and interannual climatic variability influence biodiversity patterns across Andean and Subandean wetlands.
-
 ## Methods
 
 Methods included:
