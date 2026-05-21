@@ -6,7 +6,7 @@ Environmental and multivariate analysis of Patagonian mountain wetlands using R.
 
 This project explores the spatial and temporal variability of aquatic macroinvertebrate communities in Patagonian mountain wetlands using physicochemical and environmental data.
 
-The analysis evaluates how altitude, nutrient availability, and interannual climatic variability influence biodiversity patterns across Andean and sub-Andean wetlands.
+The analysis evaluates how altitude, nutrient availability, and interannual climatic variability influence biodiversity patterns across Andean and Subandean wetlands.
 
 ## Methods
 
@@ -50,7 +50,7 @@ Generalized Linear Mixed Models (GLMM) revealed significant relationships betwee
 
 ### Spatial and temporal variability in macroinvertebrate abundance
 
-Modeled abundance patterns across Andean and sub-Andean wetlands showed strong interannual variability and significant elevation × year interactions.
+Modeled abundance patterns across Andean and Subandean wetlands showed strong interannual variability and significant elevation × year interactions.
 
 ![](figures/macroinvertebrate_abundance_temporal.png)
 
@@ -66,7 +66,7 @@ LCBD analyses highlighted spatial differences in community uniqueness between we
 
 ### Environmental summary statistics
 
-Summary of physicochemical variables measured across Andean and sub-Andean wetlands during the 2018, 2024, and 2025 sampling campaigns.
+Summary of physicochemical variables measured across Andean and Subandean wetlands during the 2018, 2024, and 2025 sampling campaigns.
 
 ![](results/environmental_summary_table.png)
 
