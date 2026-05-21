@@ -54,7 +54,7 @@ Generalized Linear Mixed Models (GLMM) revealed significant relationships betwee
 Modeled abundance patterns across Andean and Subandean wetlands showed strong interannual variability and significant elevation × year interactions.
 
 <p align="center">
-  <img src="figures/analysis/macroinvertebrate_abundance_temporal.png" width="75%">
+  <img src="./figures/analysis/macroinvertebrate_abundance_temporal.png" width="75%">
 </p>
 
 ---
@@ -64,7 +64,7 @@ Modeled abundance patterns across Andean and Subandean wetlands showed strong in
 LCBD analyses highlighted spatial differences in community uniqueness between wetland types.
 
 <p align="center">
-  <img src="figures/analysis/lcbd_elevation_model.png" width="45%">
+  <img src="./figures/analysis/lcbd_elevation_model.png" width="45%">
 </p>
 
 ## Model outputs
@@ -120,8 +120,8 @@ Generalized Linear Mixed Models evaluating spatial and temporal variability in r
 - Results suggest that mountain wetlands are highly sensitive ecosystems where both local physicochemical conditions and large-scale climatic variability shape biological assemblages.
 
 <p align="center">
-  <img src="figures/fieldwork/high_mountain_fieldwork.png" width="48%">
-  <img src="figures/fieldwork/andean_sampling_campaign.png" width="48%">
+  <img src="./figures/fieldwork/high_mountain_fieldwork.png" width="48%">
+  <img src="./figures/fieldwork/andean_sampling_campaign.png" width="48%">
 </p>
 *High-elevation field campaigns and wetland sampling across Andean Patagonia.*
 
@@ -143,8 +143,8 @@ These ecosystems are exposed to increasing anthropogenic pressures including:
 Because mountain wetlands act as biodiversity reservoirs and freshwater regulation systems, long-term ecological monitoring is essential for conservation and management strategies under climate change scenarios.
 
 <p align="center">
-  <img src="figures/fieldwork/andean_wetland_climate_sensitivity.png" width="48%">
-  <img src="figures/fieldwork/subandean_wetland_ecosystem.png" width="48%">
+  <img src="./figures/fieldwork/andean_wetland_climate_sensitivity.png" width="48%">
+  <img src="./figures/fieldwork/subandean_wetland_ecosystem.png" width="48%">
 </p>
 *Contrasting Andean and Subandean wetland ecosystems sampled during the study.*
 
@@ -163,13 +163,13 @@ Because mountain wetlands act as biodiversity reservoirs and freshwater regulati
 - Integration of field ecology, laboratory analyses, and quantitative data analysis
 
 <p align="center">
-  <img src="figures/fieldwork/wetland_macroinvertebrate_sampling.png" width="48%">
-  <img src="figures/fieldwork/macroinvertebrate_samples.png" width="48%">
+  <img src="./figures/fieldwork/wetland_macroinvertebrate_sampling.png" width="48%">
+  <img src="./figures/fieldwork/macroinvertebrate_samples.png" width="48%">
 </p>
 *Aquatic macroinvertebrate sampling and laboratory sample processing.*
 
 <p align="center">
-  <img src="figures/fieldwork/case_building_caddisfly.png" width="35%">
+  <img src="./figures/fieldwork/case_building_caddisfly.png" width="35%">
 </p>
 
 *Case-building caddisfly larva collected from Patagonian mountain wetlands.*
